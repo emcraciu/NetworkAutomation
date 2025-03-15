@@ -1,5 +1,3 @@
-
-
 cart = {'apple': 10, 'plums': 15, 'bananas': 5}
 shop_K = {'apple': 1.2, 'plums': 4, 'bananas': 5.5}
 shop_P = {'apple': 1.3, 'plums': 3, 'bananas': 8}
@@ -7,19 +5,22 @@ shop_L = {'apple': 1.4, 'plums': 2, 'bananas': 10}
 
 shops = {'pro': shop_P, 'lil': shop_L, 'kau': shop_K}
 
-result = {}
+def finder (items, shop_list):
+    result = {}
+    for item in items:
+        result[item] = {}
+        result[item]['price'] = None
 
-for product in cart:
-    result[product] = {}
-    result[product]['price'] = None
-    result[product]['total'] = None
-    for shop in shops:
-        if result[product]['price'] is None:
-            result[product]['price'] = shops[shop][product]
-        elif result[product]['price'] > shops[shop][product]:
-            result[product]['price'] = shops[shop][product]
+        for shop in shop_list:
+            if result[item]['price'] is None:
+                result[item]['price'] = shop_list[shop][item]
+            elif result[item]['price'] > shop_list[shop][item]:
+                result[item]['price'] = shop_list[shop][item]
+        result[item]['total'] = result[item]['price'] * items[item]
+    return result
 
-print(result)
+
+print(finder(cart,shops))
 
 
 
