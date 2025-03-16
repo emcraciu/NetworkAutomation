@@ -122,3 +122,5 @@ for switch in all_switches:
     if not has_port_200 and not is_fast:
         continue
     print(switch)
+
+    #and thats that
