@@ -29,4 +29,5 @@ shop_P = {'apple': 1.3, 'plums': 3, 'bananas': 8}
 shop_L = {'apple': 1.4, 'plums': 2, 'bananas': 10}
 
 shops = {'pro': shop_P, 'lil': shop_L, 'kau': shop_K}
+
 print(bestBuy(cart, shops)) ## am apelat functia si am afisat rezultatul

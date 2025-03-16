@@ -4,7 +4,7 @@
 Create and call python function that will collect vlan information
 for each port of a switch and return a dictionary as in the example below:
 ```python
-{
+var = {
     'SW1': {
         'Ethernet1/1': {'vlans': [100, 200, 300]},
         'Ethernet1/2': {'vlans': [100, 500, 20]},
