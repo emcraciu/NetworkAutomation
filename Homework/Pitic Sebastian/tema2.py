@@ -1,6 +1,3 @@
-import random
-import string
-
 class Switch:
     def __init__(self, model, serial):
         self.model = model
