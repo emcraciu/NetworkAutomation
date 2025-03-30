@@ -1,6 +1,6 @@
 import subprocess
 import ipaddress
-import tabulate
+# import tabulate
 
 class SystemUtils:
 
