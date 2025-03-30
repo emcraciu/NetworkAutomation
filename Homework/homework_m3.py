@@ -1,6 +1,6 @@
 import subprocess
 import ipaddress
-# import tabulate
+from tabulate import tabulate
 
 class SystemUtils:
 
@@ -130,10 +130,22 @@ class SystemUtils:
 
         return routing_information
 
-##TODO
-    # nu merge sa instalez tabulate
+
     def get_listening_ports(self):
-        portsResults = subprocess.run(['netstat', '-ln'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        portsResults = subprocess.run(['netstat', '-lntu'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        table = []
+        startingPorts = False
+        for line in portsResults.stdout.splitlines():
+            lineDecode = line.decode('utf-8')
+            if startingPorts:
+                splitLine = lineDecode.split()
+                table.append([splitLine[0], splitLine[3], splitLine[4]])
+            if 'Proto' in lineDecode and 'Local Address' in lineDecode and 'Foreign Address' in lineDecode:
+                startingPorts = True
+        return table
+
+
+
 
 clasa = SystemUtils()
 # print(clasa.get_ipv4_interfaces())
@@ -141,3 +153,5 @@ clasa = SystemUtils()
 # print(clasa.get_ipv4_routes())
 # print(clasa.get_ipv6_routes())
 
+table = clasa.get_listening_ports()
+print(tabulate(table, headers=['Proto', 'Local Address', 'Foreign Address']))
