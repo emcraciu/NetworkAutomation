@@ -6,7 +6,7 @@ def test_ping():
     Returns True or False depending on ping success
     Returns False if the regex match somehow failed
     '''
-    with TelnetContext(address="92.83.42.103",hostname="root",port=5027) as t:
+    with TelnetContext(address="92.83.42.103",hostname="root",port=5058) as t:
         t.write(b"ping 192.168.11.254 -c 4")
         sleep(6)
         out = t.read_very_eager().decode()

@@ -60,7 +60,8 @@ def save_run_conf(te: TelnetContext):
     if b'Continue' in out:
         te.write(b"")
     sleep(3)
-    te.expect([b"#"])
+    te.expect([b"#", b'[confirm]'])
+    te.write(b'')
 
 
 def compress_run_conf(te: TelnetContext):
@@ -130,8 +131,8 @@ def add_static_route(te: TelnetContext, remote_network: IPv4Network, remote_sub_
 
 def configure_router():
     remote_address = '92.83.42.103'
-    port=5026
-    with TelnetContext(remote_address, port, b"IOU1") as te:
+    port=5006
+    with TelnetContext(remote_address, port, b"IOU2") as te:
         configure_interfaces(te)
         configure_dhcp(te = te,
                    pool_name="Joe",
