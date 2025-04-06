@@ -1,3 +1,4 @@
+import asyncio
 from subprocess import PIPE, Popen
 from ipaddress import ip_address
 
@@ -12,7 +13,8 @@ add_route_command = f'ip route add {network_address}/{subnet_mask} via {router_a
 set_int_on_command = 'ip link set dev ens4 up'.split(' ')
 
 
-def configure_server_interfaces():
+async def configure_server_interfaces():
+    print("Configuring Ubuntu Server Interfaces")
     global set_ip_command, remove_ip_command, add_route_command, set_int_on_command
     set_ip = Popen(set_ip_command, stdout=PIPE, stderr=PIPE)
     print(set_ip.communicate())
@@ -27,5 +29,5 @@ def configure_server_interfaces():
     print(set_guest_network_route.communicate())
 
 if __name__ == '__main__':
-    configure_server_interfaces()
+    asyncio.run(configure_server_interfaces())
 

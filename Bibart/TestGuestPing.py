@@ -1,11 +1,14 @@
+import asyncio
+
 from TelnetContext import TelnetContext
 from time import sleep
 import re
-def test_ping():
+async def test_ping():
     '''
     Returns True or False depending on ping success
     Returns False if the regex match somehow failed
     '''
+    print("Testing Guest Ping")
     with TelnetContext(address="92.83.42.103",hostname="root",port=5058) as t:
         t.write(b"ping 192.168.11.254 -c 4")
         sleep(6)
@@ -27,5 +30,9 @@ def test_ping():
             return False
         # print(out)
 
+async def main():
+    res = await asyncio.gather(test_ping())
+    print(res)
+
 if __name__ == '__main__':
-    print(test_ping())
+    asyncio.run(main())
