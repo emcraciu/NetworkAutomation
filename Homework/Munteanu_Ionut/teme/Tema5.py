@@ -7,17 +7,18 @@ def set_ip_on_ubuntu():
     ubuntu_ip='192.168.11.21/24'
     destination_ip='192.168.12.0/24'
     gateway_ip='192.168.11.1'
+    client_network='192.168.101.0/24'
     subprocess.Popen(['sudo','ip','address',"add",ubuntu_ip,"dev",interface],stdout=subprocess.PIPE)
     set_up=subprocess.Popen(["sudo","ip","link","set",interface,"up"],stdout=subprocess.PIPE)
     subprocess.Popen(['sudo',"ip","route","add",destination_ip,"via",gateway_ip],stdout=subprocess.PIPE)
-    subprocess.Popen(['sudo', "ip", "route", "add", "default", "via", gateway_ip], stdout=subprocess.PIPE)
+    subprocess.Popen(['sudo', "ip", "route", "add", client_network, "via", gateway_ip], stdout=subprocess.PIPE)
 
 def set_ip_on_guest():
     interface = 'eth0'
     guest_ip = '192.168.101.100/24' #nu ia cu dhcp ip :(
     destination_ip = '192.168.101.1/24'
 
-    new_te = telnetlib.Telnet("92.83.42.103", 5005)
+    new_te = telnetlib.Telnet("92.83.42.103", 5045)
     new_te.write(f"ip addr add {guest_ip} dev {interface}".encode())
     new_te.write(f"ip link set dev {interface} up".encode())
     new_te.write(f"ip route add default via {destination_ip}".encode())
@@ -52,10 +53,12 @@ def ssh_function(te):
     te.write(b'username admin password cisco\n')
     te.expect([b"IOU1\(config\)#"])
     te.write(b'crypto key generate rsa\n')
-    te.expect([b"How many bits in the modulus.*"])
-    te.write(b'1024\n')
-    te.expect([b"IOU1\(config\)#"])
-    te.write(b'')
+    time.sleep(3)
+    te.write(b' \n')
+    time.sleep(3)
+    te.write(b'yes\n')
+    time.sleep(3)
+    te.write(b'\n')
     te.expect([b"IOU1\(config\)#"])
     te.write(b'ip ssh version 2\n')
     te.expect([b"IOU1\(config\)#"])
@@ -71,11 +74,12 @@ def ssh_function(te):
 
 def router():
     host='92.83.42.103'
-    port=5007
+    port=5044
     interface_number=4
 
     te=telnetlib.Telnet(host,port)
 
+    print("m-am conectat")
     te.write(b'')
 
     te.write(b'conf t\n')
@@ -90,8 +94,8 @@ def router():
     te.write(b'no shutdown\n')
     te.expect([b"IOU1\(config-if\)#"])
     te.write(b'exit\n')
-    te.write(b'ip route 0.0.0.0 0.0.0.0 192.168.11.21\n')
     te.expect([b"IOU1\(config\)#"])
+    te.write(b'ip route 0.0.0.0 0.0.0.0 192.168.11.21\n')
     te.expect([b"IOU1\(config\)#"])
 
     dhcp_exclude_interval(te,1,99)
@@ -104,20 +108,50 @@ def router():
     ssh_function(te)
     te.write(b'exit\n')
 
+
+def test_ping():
+
+    try:
+        output=subprocess.check_output(
+                ['ping', '-c', '1', '192.168.101.100'],
+                stderr=subprocess.STDOUT,
+                text=True)
+
+        if 'bytes from' in output:
+            print("Ping is working")
+        else:
+            print("Ping failed")
+
+    except subprocess.CalledProcessError as e:
+        print("Ping failed")
+
+
 while True:
-    print("1.Set ip on Ubuntu")
-    print("2.Set ip on Docker")
-    print("3.Make conf for router")
-    option=input("Option: ")
+    print("1.Set IP on Ubuntu Server and Configure")
+    print("2.Set IP on Guest and Configure")
+    print("3.Configure Router")
+    print("4.Check IP from Ubuntu Server to Guest")
+    print("5.Exit")
+    option=input("Choose an option:")
+
     match option:
         case "1":
             set_ip_on_ubuntu()
-            print("Set ip on Ubuntu!")
+            print("Command executed successfully!")
         case "2":
             set_ip_on_guest()
-            print("Set ip on Docker!")
+            print("Command executed successfully!")
         case "3":
             router()
-            print("Conf for router made!")
+            print("Command executed successfully!")
+        case "4":
+            test_ping()
+            print("Command executed successfully!")
+        case "5":
+            break
+
+    time.sleep(2)
+
+
 
 
