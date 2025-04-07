@@ -107,7 +107,7 @@ def set_ubuntu_config():
 
 def set_ip_address_router(ipAddress,interfaceName,dhcp):
     remote_address = ('192.168.0.100')
-    port = 5007
+    port = 5015
     addIpCommand = "ip add " + ipAddress + " 255.255.255.0"
     interfaceCommand = "int " + interfaceName
     with TelnetContext(remote_address, port, b"IOU1") as te:
@@ -172,7 +172,7 @@ def set_ip_address_router(ipAddress,interfaceName,dhcp):
 def test_ping(ipAddress):
     print('ai intrat in functie')
     remote_address = ('192.168.0.100')
-    port = 5004
+    port = 5015
     addIpCommand = "ping -c 5 " + ipAddress
     with TelnetContext(remote_address, port, b"UbuntuDockerGuest-1") as te:
         te.write(addIpCommand.encode())
