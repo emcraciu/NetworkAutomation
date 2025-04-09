@@ -3,7 +3,7 @@ import asyncio
 from asyncio import sleep
 
 address = '92.83.42.103'
-port = 5002
+port = 5037
 
 async def configure_csr_device(address: str, port: int, user: str, password: str, hostname: str):
     print("Configuring CSR device")

@@ -42,7 +42,7 @@ async def configure_dhcp(te: TelnetContext, pool_name: str,network_addr: IPv4Add
     te.expect([b'\(dhcp-config\)'])
     te.write(f'network {network_addr} {subnet_mask}'.encode())
     te.expect([b'\(dhcp-config\)'])
-    te.write(f'async default-router {gateway}'.encode())
+    te.write(f'default-router {gateway}'.encode())
     te.expect([b'\(dhcp-config\)'])
     te.write(f'dns-server {dns}'.encode())
     te.expect([b'\(dhcp-config\)'])
@@ -98,8 +98,7 @@ async def configure_telnet(te: TelnetContext):
     te.expect([b"#"])
 
 async def skip_initial_config_and_rename(te: TelnetContext):
-    for _ in range(2):
-        te.write(b'')
+    te.write(b'\r')
     await sleep(3)
     output = te.read_very_eager()
     if b'Autoinstall trying' in output:
@@ -125,9 +124,7 @@ async def skip_initial_config_and_rename(te: TelnetContext):
                 if b'saved successfully' in output:
                     print('Saved successfully')
                     break
-            # Nu vrea sa dea endline aici ? DE CE??? TODO:
-            for _ in range(5):
-                te.write(b'')
+            te.write(b'\r')
             await sleep(5)
             output = te.read_very_eager()
             match = re.search(pattern, output)
@@ -159,6 +156,8 @@ async def configure_ssh(te: TelnetContext, domain_name: str, modulus: int):
     te.write(f'crypto key generate rsa modulus {modulus}'.encode())
     await sleep(2)
     te.expect([b"\(config\)#"])
+    te.write(b'username user secret pass')
+    te.expect([b"\(config\)#"])
     te.write(b'line vty 0 4')
     te.expect([b"\(config-line\)#"])
     te.write(b"transport input ssh")
@@ -169,11 +168,10 @@ async def configure_ssh(te: TelnetContext, domain_name: str, modulus: int):
     te.expect([b"\(config-line\)#"])
     te.write(b"exit")
     te.expect([b"\(config\)#"])
-    te.write(b'username user secret pass privilege 15')
+    te.write(b'ip ssh version 2')
     te.expect([b"\(config\)#"])
-    # de ce nu intra in exit???
     await sleep(1)
-    te.write(b'')
+    te.write(b'\r')
     await sleep(1)
     te.write(b'exit')
 
@@ -188,7 +186,7 @@ async def add_static_route(te: TelnetContext, remote_network: IPv4Network, remot
 async def configure_router():
     print("Configuring Router")
     remote_address = '92.83.42.103'
-    port=5006
+    port=5035
 
     with TelnetContext(remote_address, port, b'') as te:
         await skip_initial_config_and_rename(te)

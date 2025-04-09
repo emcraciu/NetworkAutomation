@@ -1,0 +1,35 @@
+
+testbed:
+  name: "CONFIGconfig.yaml"
+
+devices:
+  IOU1:
+    type: 'router'
+    os: 'ios'
+    platform: iou
+    credentials:
+      default:
+        username: "user"
+        password: "pass"
+    connections:
+      cli:
+        protocol: ssh
+        ip: "192.168.11.1"
+        arguments:
+          connection_timeout: 360
+  CSR:
+    alias: 'CSR'
+    type: 'router'
+    os: 'iosxe'
+    platform: csr1000v
+    credentials:
+      default:
+        username: "user"
+        password: "pass"
+    connections:
+      cli:
+        protocol: telnet
+        ip: "92.83.42.103"
+        port: 5037
+        arguments:
+          connection_timeout: 360
