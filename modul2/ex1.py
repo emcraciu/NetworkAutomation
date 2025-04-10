@@ -32,6 +32,15 @@ while True:
         print("Invalid choice, please try again")
         continue
 
+    if choice == 'x':
+        break
+
+    try:
+        selection = int(choice)
+    except ValueError:
+        print("Invalid choice, please try again")
+        continue
+
     money = input("Give money: ")
     try:
         money = int(money)
