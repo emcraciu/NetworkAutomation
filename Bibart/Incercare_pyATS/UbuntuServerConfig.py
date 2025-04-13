@@ -15,10 +15,10 @@ def configure():
         'sudo ip route add 192.168.103.0/24 via 192.168.11.1',
         'sudo ip route add 192.168.104.0/24 via 192.168.11.1',
         'sudo ip route add 10.10.10.0/24 via 192.168.11.1',
-        'sudo ip route add 20.10.10.0/24 via 192.168.11.1',
-        'sudo ip route add 30.10.10.0/24 via 192.168.11.1',
-        'sudo ip route add 40.10.10.0/24 via 192.168.11.1',
-        'sudo ip route add 50.10.10.0/24 via 192.168.11.1',
+        'sudo ip route add 20.20.20.0/24 via 192.168.11.1',
+        'sudo ip route add 30.30.30.0/24 via 192.168.11.1',
+        'sudo ip route add 40.30.30.0/24 via 192.168.11.1',
+        'sudo ip route add 50.50.50.0/24 via 192.168.11.1',
     ]
     for c in commands:
         command = Popen(c.split(' '), stdout=PIPE, stderr=PIPE)
