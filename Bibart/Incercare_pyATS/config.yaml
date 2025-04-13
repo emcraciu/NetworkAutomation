@@ -1,5 +1,5 @@
 testbed:
-  name: "CONFIGconfig.yaml"
+  name: "Congiguratie.yaml"
 
 devices:
   IOU1:
@@ -7,6 +7,14 @@ devices:
     os: ios
     custom:
       hostname: IOU1
+
+      rip:
+        networks:
+          - 192.168.11.0/24
+          - 192.168.101.0/24
+          - 192.168.102.0/24
+          - 192.168.103.0/24
+          - 192.168.104.0/24
 
       dhcp_pools:
         guests:
@@ -24,13 +32,13 @@ devices:
           via: 192.168.11.254
 
     connections:
-      ssh: # numele conexiunii, orice
+      ssh:
         class: ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.11.1
         port: 22
         credentials:
-          default: # numele credentialului, orice
+          default:
             username: user
             password: pass
       telnet:
@@ -38,16 +46,32 @@ devices:
         protocol: telnet
         ip: 192.168.0.100
         port: 5012
+
   CSR:
     type: router
     os: iosxe
     platform: csr1000v
     custom:
       hostname: CSR
+
       routes:
         to_server_network:
           to_ip: 192.168.11.0/24
           via: 192.168.102.1
+
+      dhcp_pools:
+        guests:
+          network: 50.50.50.0/24
+          default_router: 50.50.50.1
+          dns_server: 20.20.20.254
+          domain_name: savnet.hu
+
+      rip:
+        networks:
+          - 192.168.101.0/24
+          - 50.50.50.0/24
+          - 40.40.40.0/24
+
     connections:
       telnet:
         class: telnet_connector.TelnetConnector
@@ -57,18 +81,89 @@ devices:
       ssh:
         class: ssh_connector.SSHConnector
         protocol: ssh
-        ip: 192.168.102.2
+        ip: 50.50.50.1
         port: 22
         credentials:
           default:
             username: user
             password: pass
 
+  V15:
+    type: router
+    os: ios
+    custom:
+      hostname: V15
+
+      rip:
+        networks:
+          - 192.168.102.0/24
+          - 10.10.10.0/24
+          - 20.20.20.0/24
+
+    connections:
+      ssh:
+        class: ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.102.2
+        port: 22
+        credentials:
+          default:
+            username: user
+            password: pass
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5003
+
+  FTD:
+    type: firewall_thing
+    os: something
+    custom:
+      hostname: FTD
+    connections:
+#      ssh:
+#        class: ssh_connector.SSHConnector
+#        protocol: ssh
+#        ip: 10.10.10.2
+#        port: 22
+#        credentials:
+#          default:
+#            username: user
+#            password: pass
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5005
+
+  DNS1:
+    type: dns-server
+    os: other
+    custom:
+      hostname: DNS1
+    connections:
+#      ssh:
+#        class: ssh_connector.SSHConnector
+#        protocol: ssh
+#        ip: 20.20.20.254
+#        port: 22
+#        credentials:
+#          default:
+#            username: user
+#            password: pass
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5013
+
   UbuntuServer:
     type: server_pc
     os: ubuntu
 
     custom:
+      hostname: UbuntuServer
       routes:
         to_guest_network:
           to_ip: 192.168.101.0/24
@@ -87,6 +182,10 @@ devices:
         protocol: telnet
         ip: 192.168.0.100
         port: 5903
+        credentials:
+          default:
+            username: user
+            password: pass
 
   UbuntuGuest1:
     type: guest_pc
@@ -98,37 +197,89 @@ devices:
         ip: 192.168.0.100
         port: 5058
 
+  UbuntuGuest2:
+    type: guest_pc
+    os: ubuntu
+    connections:
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5007
+
+
 topology:
   IOU1:
     interfaces:
       Ethernet0/0:
         alias: initial
         type: ethernet # nu e valoare fixa, e folosita sa grupezi interfete
-        link: "to ubuntu" # asta e un nume descriptiv
+        link: "to ubuntu server" # asta e un nume descriptiv
         ipv4: 192.168.11.1/24
       Ethernet0/1:
         type: ethernet
-        link: "to guest"
+        link: "to CSR"
         ipv4: 192.168.101.1/24
       Ethernet0/2:
         type: ethernet
-        link: "to csr"
+        link: "to V15"
         ipv4: 192.168.102.1/24
       Ethernet0/3:
         type: ethernet
-        link: ""
+        link: "to ftd"
         ipv4: 192.168.103.1/24
       Ethernet1/0:
         type: ethernet
         link: ""
         ipv4: 192.168.104.1/24
+
+  V15:
+    interfaces:
+      GigabitEthernet0/0:
+        type: gigabit
+        link: "to IOU"
+        ipv4: 192.168.102.2/24
+      GigabitEthernet0/1:
+        type: gigabit
+        link: "to FTD"
+        ipv4: 10.10.10.1/24
+      GigabitEthernet0/2:
+        type: gigabit
+        link: "to DNS-1"
+        ipv4: 20.20.20.1/24
+
+  FTD:
+    interfaces:
+      Gigabit0/0:
+        type: gigabit
+        link: "to IOU"
+        ipv4: 192.168.103.2
+      Gigabit0/1:
+        type: gigabit
+        link: "to V15"
+        ipv4: 10.10.10.2/24
+      Gigabit0/2:
+        type: gigabit
+        link: "to guest 2"
+        ipv4: 30.30.30.1/24
+      Gigabit0/3:
+        type: gigabit
+        link: "to CSR"
+        ipv4: 40.40.40.2/24
+
   CSR:
     interfaces:
       GigabitEthernet1:
-        alias: initial
-        type: gigabit_ethernet
+        type: gigabit
         link: "to IOU1"
-        ipv4: 192.168.102.2/24
+      GigabitEthernet2:
+        type: gigabit
+        link: "to guest 1"
+        ipv4: 50.50.50.1/24
+      GigabitEthernet3:
+        type: gigabit
+        link: "to FTD"
+        ipv4: 40.40.40.1/24
 
   UbuntuServer:
     interfaces:
@@ -141,4 +292,10 @@ topology:
     interfaces:
       eth0:
         type: ethernet
-        link: "to IOU1"
+        link: "to CSR"
+
+  UbuntuGuest2:
+    interfaces:
+      eth0:
+        type: ethernet
+        link: "to FTD"

@@ -1,6 +1,7 @@
 import logging
 from logging import Logger
 from typing import Optional
+from UbuntuServerConfig import configure as configure_ubuntu_server
 
 from pyats import aetest
 from pyats.aereport.testscript import TestResult
@@ -40,7 +41,6 @@ class ConnectionAttempt(aetest.CommonSetup):
                 self.failed(f'Other exception occurred, {e}')
 
 class ConfigTests(aetest.Testcase):
-    #TODO: fa si pentru server si guest configurile
 
     @aetest.test
     def IOU1_initial_conf(self, telnet_objects: dict[str,TelnetConnector]):
@@ -55,25 +55,35 @@ class ConfigTests(aetest.Testcase):
             if name == 'CSR':
                 conn.do_initial_config()
 
-class SSHConnectorTests(aetest.Testcase):
     @aetest.test
-    def connect_ssh_all(self):
-        if self.parent.result.value != 'passed':
-            self.fail('Config failure. Failing SSH')
-        else:
-            logger.info('Attempting SSHConnector tests')
-            self.parameters['ssh_clients'] = {}
-            self.parent.parameters['ssh_clients'] = self.parameters['ssh_clients']
-            for name, dev in testbed.devices.items():
-                if 'ssh' in dev.connections:
-                    ssh_client = dev.connections.ssh['class'](dev)
-                    ssh_client.connect(connection=dev.connections.ssh)
-                    self.parameters['ssh_clients'][name] = ssh_client
+    def V15_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
+        for name, conn in telnet_objects.items():
+            if name == 'V15':
+                conn.do_initial_config()
 
     @aetest.test
-    def test_some_commands(self, ssh_clients: dict[str, SSHConnector]):
-        for dev_name, ssh_client in ssh_clients.items():
-            ssh_client.get_device_details()
+    def UbuntuServer_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
+        configure_ubuntu_server()
+
+# class SSHConnectorTests(aetest.Testcase):
+#     @aetest.test
+#     def connect_ssh_all(self):
+#         if self.parent.result.value != 'passed':
+#             self.fail('Config failure. Failing SSH')
+#         else:
+#             logger.info('Attempting SSHConnector tests')
+#             self.parameters['ssh_clients'] = {}
+#             self.parent.parameters['ssh_clients'] = self.parameters['ssh_clients']
+#             for name, dev in testbed.devices.items():
+#                 if 'ssh' in dev.connections:
+#                     ssh_client = dev.connections.ssh['class'](dev)
+#                     ssh_client.connect(connection=dev.connections.ssh)
+#                     self.parameters['ssh_clients'][name] = ssh_client
+#
+#     @aetest.test
+#     def test_some_commands(self, ssh_clients: dict[str, SSHConnector]):
+#         for dev_name, ssh_client in ssh_clients.items():
+#             ssh_client.get_device_details()
 
 class Cleanup(aetest.CommonCleanup):
     @aetest.subsection

@@ -21,7 +21,7 @@ class TelnetConnector:
         self.connection = kwargs['connection']
         self._conn = telnetlib.Telnet(
             host=self.connection.ip.compressed,
-            port=self.connection.port
+            port=self.connection.port,
         )
 
     # modificat aici
@@ -72,9 +72,13 @@ class TelnetConnector:
             # interfete
             for iname, interface in self.device.interfaces.items():
                 self.execute(f'interface {interface.name}', prompt=[r'\(config-if\)#'])
-                ip = interface.ipv4.ip.compressed
-                mask = interface.ipv4.network.netmask.exploded
-                self.execute(f'ip add {ip} {mask}', prompt=[r'\(config-if\)#'])
+
+                if interface.ipv4:
+                    ip = interface.ipv4.ip.compressed
+                    mask = interface.ipv4.network.netmask.exploded
+                    self.execute(f'ip add {ip} {mask}', prompt=[r'\(config-if\)#'])
+                else:
+                    self.execute('ip add dhcp', prompt=[r'\(config-if\)#'])
                 self.execute(f'no sh', prompt=[r'\(config-if\)#'])
                 self.execute('exit', prompt=[r'\(config\)#'])
 
@@ -83,6 +87,17 @@ class TelnetConnector:
                 for r_name, route in self.device.custom['routes'].items():
                     to_ip = ipaddress.IPv4Network(route['to_ip'])
                     self.execute(f'ip route {to_ip.network_address} {to_ip.netmask.exploded} {route['via']}', prompt=[r'\(config\)#'])
+
+            # rip
+            if self.device.type == 'router' and self.device.custom.get('rip'):
+                rip_dict = self.device.custom['rip']
+                self.execute('router rip', prompt=[r'\(config-router\)#'])
+                self.execute('version 2', prompt=[r'\(config-router\)#'])
+                self.execute('no auto-summary', prompt=[r'\(config-router\)#'])
+                networks = list(map(lambda str_addr : ipaddress.IPv4Network(str_addr), rip_dict.get('networks')))
+                for network in networks:
+                    self.execute(f'network {network.network_address}', prompt=[r'\(config-router\)#'])
+                self.execute('exit', prompt=[r'\(config\)#'])
 
             # dhcp pools
             if self.device.custom.get('dhcp_pools'):
@@ -124,6 +139,7 @@ class TelnetConnector:
             if self.contains(['Continue? [no]:', '[confirm]']):
                 self.execute('yes', prompt=[rf'#{hostname}#'])
             self.execute('', prompt=[rf'{hostname}#'])
+
 
     def configure(self, command, **kwargs):
         return "config output"
