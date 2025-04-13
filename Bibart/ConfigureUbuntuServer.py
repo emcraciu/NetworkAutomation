@@ -28,6 +28,10 @@ async def configure_server_interfaces():
     set_guest_network_route = Popen(f'ip route add 192.168.101.0/24 via 192.168.11.1'.split(' '), stdout=PIPE, stderr=PIPE)
     print(set_guest_network_route.communicate())
 
+    set_guest_network_route = Popen(f'ip route add 192.168.102.0/24 via 192.168.11.1'.split(' '), stdout=PIPE,
+                                    stderr=PIPE)
+    print(set_guest_network_route.communicate())
+
 if __name__ == '__main__':
     asyncio.run(configure_server_interfaces())
 
