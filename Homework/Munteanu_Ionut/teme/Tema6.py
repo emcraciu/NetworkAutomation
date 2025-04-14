@@ -55,7 +55,7 @@ def dhcp_function(te):
 def ssh_function(te):
     te.write(b'ip domain name local\n')
     te.expect([b"IOU1\(config\)#"])
-    te.write(b'username admin password cisco\n')
+    te.write(b'username admin secret cisco\n')
     te.expect([b"IOU1\(config\)#"])
     te.write(b'crypto key generate rsa\n')
     time.sleep(3)
