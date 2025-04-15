@@ -5,10 +5,8 @@ logging.basicConfig(level=logging.INFO, encoding='utf-8')
 
 def configure():
     commands = [
-        'sudo su'
-        'osboxes.org',
         'sudo ip address add 192.168.11.254/24 dev ens4',
-        'sudo ip link set dev ens4 up'
+        'sudo ip link set dev ens4 up',
         'sudo ip route add 192.168.101.0/24 via 192.168.11.1',
         'sudo ip route add 192.168.101.0/24 via 192.168.11.1',
         'sudo ip route add 192.168.102.0/24 via 192.168.11.1',
@@ -21,6 +19,7 @@ def configure():
         'sudo ip route add 50.50.50.0/24 via 192.168.11.1',
     ]
     for c in commands:
-        command = Popen(c.split(' '), stdout=PIPE, stderr=PIPE)
-        logger.warn(command.communicate())
+        logger.info(f'executing: {c.split(' ')}')
+        out = Popen(c.split(' '), stdout=PIPE, stderr=PIPE).communicate()
+        logger.warn(out)
 

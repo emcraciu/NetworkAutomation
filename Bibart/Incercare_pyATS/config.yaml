@@ -45,7 +45,7 @@ devices:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5012
+        port: 5033
 
   CSR:
     type: router
@@ -76,7 +76,7 @@ devices:
       ssh:
         class: ssh_connector.SSHConnector
         protocol: ssh
-        ip: 50.50.50.1
+        ip: 192.168.101.2
         port: 22
         credentials:
           default:
@@ -109,7 +109,7 @@ devices:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5003
+        port: 5036
 
   FTD:
     type: firewall_thing
@@ -130,7 +130,7 @@ devices:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5005
+        port: 5039
 
   DNS1:
     type: dns-server
@@ -151,7 +151,7 @@ devices:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5013
+        port: 5034
 
   UbuntuServer:
     type: server_pc
@@ -172,15 +172,15 @@ devices:
         username: osboxes
         password: osboxes.org
     connections:
-      telnet:
-        class: telnet_connector.TelnetConnector
-        protocol: telnet
-        ip: 192.168.0.100
-        port: 5903
+      ssh:
+        class: ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.11.1
+        port: 5058
         credentials:
           default:
-            username: user
-            password: pass
+            username: osboxes
+            password: osboxes.org
 
   UbuntuGuest1:
     type: guest_pc
@@ -200,8 +200,7 @@ devices:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5007
-
+        port: 5041
 
 topology:
   IOU1:
@@ -209,19 +208,19 @@ topology:
       Ethernet0/0:
         alias: initial
         type: ethernet # nu e valoare fixa, e folosita sa grupezi interfete
-        link: "to ubuntu server" # asta e un nume descriptiv
+        link: "Server-IOU"
         ipv4: 192.168.11.1/24
       Ethernet0/1:
         type: ethernet
-        link: "to CSR"
+        link: "IOU-CSR"
         ipv4: 192.168.101.1/24
       Ethernet0/2:
         type: ethernet
-        link: "to V15"
+        link: "IOU-V15"
         ipv4: 192.168.102.1/24
       Ethernet0/3:
         type: ethernet
-        link: "to ftd"
+        link: "IOU-FTD"
         ipv4: 192.168.103.1/24
       Ethernet1/0:
         type: ethernet
@@ -232,65 +231,75 @@ topology:
     interfaces:
       GigabitEthernet0/0:
         type: gigabit
-        link: "to IOU"
+        link: "IOU-V15"
         ipv4: 192.168.102.2/24
       GigabitEthernet0/1:
         type: gigabit
-        link: "to FTD"
+        link: "V15-FTD"
         ipv4: 10.10.10.1/24
       GigabitEthernet0/2:
+        alias: initial
         type: gigabit
-        link: "to DNS-1"
+        link: "V15-DNS-1"
         ipv4: 20.20.20.1/24
 
   FTD:
     interfaces:
       Gigabit0/0:
         type: gigabit
-        link: "to IOU"
-        ipv4: 192.168.103.2
+        alias: initial
+        link: "IOU-FTD"
+#        ipv4: 192.168.103.2
       Gigabit0/1:
         type: gigabit
-        link: "to V15"
-        ipv4: 10.10.10.2/24
+        link: "V15-FTD"
+#        ipv4: 10.10.10.2/24
       Gigabit0/2:
         type: gigabit
-        link: "to guest 2"
-        ipv4: 30.30.30.1/24
+        link: "FTD-GUEST2"
+#        ipv4: 30.30.30.1/24
       Gigabit0/3:
         type: gigabit
-        link: "to CSR"
-        ipv4: 40.40.40.2/24
+        link: "FTD-CSR"
+#        ipv4: 40.40.40.2/24
 
   CSR:
     interfaces:
       GigabitEthernet1:
         type: gigabit
-        link: "to IOU1"
+        alias: initial
+        link: "IOU-CSR"
+        ipv4: 192.168.101.2/24
       GigabitEthernet2:
         type: gigabit
-        link: "to guest 1"
+        link: "CSR-GUEST1"
         ipv4: 50.50.50.1/24
       GigabitEthernet3:
         type: gigabit
-        link: "to FTD"
+        link: "FTD-CSR"
         ipv4: 40.40.40.1/24
 
   UbuntuServer:
     interfaces:
       eth1:
         type: ethernet
-        link: "to IOU1"
+        link: "Server-IOU"
         ipv4: 192.168.11.254/24
+
+  DNS1:
+    interfaces:
+      eth0:
+        type: ethernet
+        link: "V15-DNS-1"
 
   UbuntuGuest1:
     interfaces:
       eth0:
         type: ethernet
-        link: "to CSR"
+        link: "CSR-GUEST1"
 
   UbuntuGuest2:
     interfaces:
       eth0:
         type: ethernet
-        link: "to FTD"
+        link: "FTD-GUEST2"
