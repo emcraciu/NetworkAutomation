@@ -3,7 +3,6 @@ from typing import Optional
 
 from pyats.datastructures import AttrDict
 from pyats.topology import Device
-from unicon.plugins.asa.statements import enable_password
 
 
 class TelnetConnector:
@@ -44,7 +43,9 @@ class TelnetConnector:
         # configure ssh
         hostname = self.device.custom.hostname
         self.execute(f'hostname {hostname}', prompt=[r'\(config\)#'])
-        self.execute('crypto key generate rsa', prompt=[r'\(config\)#'])
+        out = self.execute('crypto key generate rsa modulus 1024', prompt=[r'\(config\)#', r'replace them\?'])
+        if 'replace them' in out:
+            self.execute('yes', prompt=[r'\(config\)#'])
         username = self.device.connections.ssh.credentials.login.username
         password = self.device.connections.ssh.credentials.login.password.plaintext
 
