@@ -6,13 +6,13 @@ devices:
     os: ios
     type: router
     custom:
-      hostname: ca-r1
+      hostname: IOU1
     connections:
       telnet:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5015 # replaces with yours
+        port: 5015
       ssh:
         class: ssh_connector.SSHConnector
         protocol: ssh
@@ -23,17 +23,17 @@ devices:
             username: admin
             password: Cisco!23
 
-  Router:
+  CSR:
     os: iosxe
     type: router
     custom:
-      hostname: ca-r2
+      hostname: CSR
     connections:
       telnet:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5027 # replaces with yours
+        port: 5027
       ssh:
         class: ssh_connector.SSHConnector
         protocol: ssh
@@ -44,28 +44,193 @@ devices:
             username: admin
             password: Cisco!23
 
+  CiscoIOSv15:
+    os: iosv
+    type: router
+    custom:
+      hostname: CiscoIOSv15
+    connections:
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5008
+      ssh:
+        class: ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.103.2
+        port: 22
+        credentials:
+          login:
+            username: admin
+            password: Cisco!23
+
+  CiscoFTD:
+    os: ftd
+    type: firewall
+    custom:
+      hostname: CiscoFTD
+    connections:
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5006
+      ssh:
+        class: ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.104.2
+        port: 22
+        credentials:
+          login:
+            username: admin
+            password: Cisco!23
+
+  DNS-1:
+    os: linux
+    type: server
+    custom:
+      hostname: DNS-1
+    connections:
+      vnc:
+        protocol: vnc
+        ip: 192.168.13.254
+        port: 5011
+
+  UbuntuServer:
+    os: linux
+    type: server
+    custom:
+      hostname: UbuntuServer
+    connections:
+      vnc:
+        protocol: vnc
+        ip: 192.168.11.254
+        port: 5901
+
+  UbuntuDockerGuest-1:
+    os: linux
+    type: server
+    custom:
+      hostname: UbuntuDockerGuest-1
+    connections:
+      telnet:
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5016
+
+  UbuntuDockerGuest-2:
+    os: linux
+    type: server
+    custom:
+      hostname: UbuntuDockerGuest-2
+    connections:
+      telnet:
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5013
+
 topology:
   IOU1:
     interfaces:
       Ethernet0/0:
         alias: initial
         type: ethernet
-        link: ubuntu
+        link: ubuntu-server
         ipv4: 192.168.11.1/24
       Ethernet0/1:
         type: ethernet
-        link: docker
-        ipv4: 192.168.101.1/24
-      Ethernet0/2:
-        type: ethernet
         link: csr
         ipv4: 192.168.102.1/24
+      Ethernet0/2:
+        type: ethernet
+        link: ciscoIOS15
+        ipv4: 192.168.103.1/24
+      Ethernet0/3:
+        type: ethernet
+        link: ciscoFTD
+        ipv4: 192.168.104.1/24
 
-  Router:
+  CSR:
     interfaces:
       GigabitEthernet1:
         alias: initial
         type: ethernet
         link: csr
         ipv4: 192.168.102.2/24
+      GigabitEthernet2:
+        type: ethernet
+        link: ubuntu-docker1
+        ipv4: 192.168.12.1/24
+      GigabitEthernet3:
+        type: ethernet
+        link: ciscoFTD
+        ipv4: 192.168.106.1/24
 
+  CiscoIOSv15:
+    interfaces:
+      GigabitEthernet0/0:
+        alias: initial
+        type: ethernet
+        link: ciscoIOS15
+        ipv4: 192.168.103.2/24
+      GigabitEthernet0/1:
+        type: ethernet
+        link: ciscoFTD
+        ipv4: 192.168.105.1/24
+      GigabitEthernet0/2:
+        type: ethernet
+        link: dns
+        ipv4: 192.168.13.1/24
+
+  CiscoFTD:
+    interfaces:
+      GigabitEthernet0/0:
+        alias: initial
+        type: ethernet
+        link: ciscoFTD
+        ipv4: 192.168.104.2/24
+      GigabitEthernet0/1:
+        type: ethernet
+        link: ciscoFTD
+        ipv4: 192.168.105.2/24
+      GigabitEthernet0/2:
+        type: ethernet
+        link: ubuntu-docker2
+        ipv4: 192.168.14.1/24
+      GigabitEthernet0/3:
+        type: ethernet
+        link: ciscoFTD
+        ipv4: 192.168.106.2/24
+
+  DNS-1:
+    interfaces:
+      eth0:
+        alias: initial
+        type: ethernet
+        link: dns
+        ipv4: 192.168.13.254/24
+
+  UbuntuServer:
+    interfaces:
+      eth0:
+        alias: initial
+        type: ethernet
+        link: ubuntu-server
+        ipv4: 192.168.11.254/24
+
+  UbuntuDockerGuest-1:
+    interfaces:
+      eth0:
+        alias: initial
+        type: ethernet
+        link: ubuntu-docker1
+        ipv4: 192.168.12.254/24
+
+  UbuntuDockerGuest-2:
+    interfaces:
+      eth0:
+        alias: initial
+        type: ethernet
+        link: ubuntu-docker2
+        ipv4: 192.168.14.254/24
