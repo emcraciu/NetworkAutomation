@@ -4,6 +4,7 @@ testbed:
 devices:
   IOU1:
     type: router
+    platform: iou
     os: ios
     custom:
       hostname: IOU1
@@ -31,6 +32,10 @@ devices:
           to_ip: 192.168.10.0/24
           via: 192.168.11.254
 
+    credentials:
+      default:
+        enable_password: pass # se copiaza in celelalte conexiuni
+
     connections:
       ssh:
         class: ssh_connector.SSHConnector
@@ -38,7 +43,7 @@ devices:
         ip: 192.168.11.1
         port: 22
         credentials:
-          default:
+          login:
             username: user
             password: pass
       telnet:
@@ -50,7 +55,7 @@ devices:
   CSR:
     type: router
     os: iosxe
-    platform: csr1000v
+    platform: csr
     custom:
       hostname: CSR
 
@@ -79,12 +84,13 @@ devices:
         ip: 192.168.101.2
         port: 22
         credentials:
-          default:
+          login:
             username: user
             password: pass
 
   V15:
     type: router
+    platform: iosv
     os: ios
     custom:
       hostname: V15
@@ -102,14 +108,14 @@ devices:
         ip: 192.168.102.2
         port: 22
         credentials:
-          default:
+          login:
             username: user
             password: pass
       telnet:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5036
+        port: 5037
 
   FTD:
     type: firewall_thing
@@ -123,14 +129,14 @@ devices:
 #        ip: 10.10.10.2
 #        port: 22
 #        credentials:
-#          default:
+#          login:
 #            username: user
 #            password: pass
       telnet:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5039
+        port: 5040
 
   DNS1:
     type: dns-server
@@ -144,7 +150,7 @@ devices:
 #        ip: 20.20.20.254
 #        port: 22
 #        credentials:
-#          default:
+#          login:
 #            username: user
 #            password: pass
       telnet:
@@ -178,7 +184,7 @@ devices:
         ip: 192.168.11.1
         port: 5058
         credentials:
-          default:
+          login:
             username: osboxes
             password: osboxes.org
 
@@ -200,7 +206,7 @@ devices:
         class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5041
+        port: 5042
 
 topology:
   IOU1:

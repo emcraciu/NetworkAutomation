@@ -25,83 +25,102 @@ class SSHConnector:
 
     def connect(self, **kwargs):
         conn_details = kwargs['connection']
-        self.username = conn_details.credentials.default.username
-        self.password = conn_details.credentials.default.password.plaintext
+        self.username = conn_details.credentials.login.username
+        self.password = conn_details.credentials.login.password.plaintext
         self.hostname = conn_details.ip.compressed
         self.port =  conn_details.port if conn_details.port else 22
         self._client.connect(hostname=self.hostname, port=self.port, username=self.username, password=self.password)
         self._shell = self._client.invoke_shell()
 
+    def enable_rest(self):
+        self.execute('en', prompt=[r'\w+#', r'\(config\)#'])
+        self.execute('conf t', prompt=[r'\(config\)#'])
+        self.execute('ip http secure-server ', prompt=[r'\(config\)#'])
+        self.execute('restconf', prompt=[r'\(config\)#'])
+
+    def move_to_global_conf(self):
+        self.execute('en', prompt=[r'\w+#', r'\(config\)#'])
+        self.execute('conf t', prompt=[r'\(config\)#'])
+        hostname = self.device.custom.hostname
+        self.execute(f'hostname {hostname}', prompt=[rf'{hostname}\(config\)#'])
+
+    def configure_interfaces(self):
+        """
+        Expects global config
+        """
+        for iname, interface in self.device.interfaces.items():
+            self.execute(f'interface {interface.name}', prompt=[r'\(config-if\)#'])
+
+            if interface.ipv4:
+                ip = interface.ipv4.ip.compressed
+                mask = interface.ipv4.network.netmask.exploded
+                self.execute(f'ip add {ip} {mask}', prompt=[r'\(config-if\)#'])
+            else:
+                self.execute('ip add dhcp', prompt=[r'\(config-if\)#'])
+            self.execute(f'no sh', prompt=[r'\(config-if\)#'])
+            self.execute('exit', prompt=[r'\(config\)#'])
+
+    def configure_routes(self):
+        if self.device.custom.get('routes'):
+            for r_name, route in self.device.custom['routes'].items():
+                to_ip = ipaddress.IPv4Network(route['to_ip'])
+                self.execute(f'ip route {to_ip.network_address} {to_ip.netmask.exploded} {route['via']}',
+                             prompt=[r'\(config\)#'])
+
+    def configure_rip(self):
+        if self.device.type == 'router' and self.device.custom.get('rip'):
+            rip_dict = self.device.custom['rip']
+            self.execute('router rip', prompt=[r'\(config-router\)#'])
+            self.execute('version 2', prompt=[r'\(config-router\)#'])
+            self.execute('no auto-summary', prompt=[r'\(config-router\)#'])
+            networks = list(map(lambda str_addr: ipaddress.IPv4Network(str_addr), rip_dict.get('networks')))
+            for network in networks:
+                self.execute(f'network {network.network_address}', prompt=[r'\(config-router\)#'])
+            self.execute('exit', prompt=[r'\(config\)#'])
+
+    def configure_dhcp_pools(self):
+        if self.device.custom.get('dhcp_pools'):
+            for pool_name, pool in self.device.custom['dhcp_pools'].items():
+                self.execute(f'ip dhcp pool {pool_name}', prompt=[r'\(dhcp-config\)#'])
+                network_ip = ipaddress.IPv4Network(pool['network'])
+                self.execute(f'network {network_ip.network_address.compressed} {network_ip.netmask.exploded}',
+                             prompt=[r'\(dhcp-config\)#'])
+                self.execute(f'default-router {pool['default_router']}', prompt=[r'\(dhcp-config\)#'])
+                if (pool.get('domain_name')):
+                    self.execute(f'domain-name {pool['domain_name']}', prompt=[r'\(dhcp-config\)#'])
+                if (pool.get('dns_server')):
+                    self.execute(f'dns-server {pool['dns_server']}', prompt=[r'\(dhcp-config\)#'])
+                self.execute('exit', prompt=[r'\(config\)#'])
+                if pool.get('excluded_address_ranges'):
+                    for r in pool['excluded_address_ranges']:
+                        start, end = r['start'], r['end']
+                        self.execute(f'ip dhcp excluded-address {start} {end}', prompt=[r'\(config\)#'])
+
+    def save_config(self):
+        self.execute('end', prompt=[r'\w+#'])
+        out = self.execute('write', prompt=[], timeout=5)
+        if 'Continue? [no]:' in out or '[confirm]' in out:
+            self.execute('yes', prompt=[r'\w+#'])
+        self.execute('', prompt=[r'\w+#'])
+
     def config(self):
         if self.device.os == 'ios' or self.device.os == 'iosxe':
             self.execute('\r', prompt=[])
-            self.execute('en', prompt=[r'\w+#', r'\(config\)#'])
-            self.execute('conf t', prompt=[r'\(config\)#'])
-            hostname = self.device.custom.hostname
-            self.execute(f'hostname {hostname}', prompt=[rf'{hostname}\(config\)#'])
-
-            # interfete
-            for iname, interface in self.device.interfaces.items():
-                self.execute(f'interface {interface.name}', prompt=[r'\(config-if\)#'])
-
-                if interface.ipv4:
-                    ip = interface.ipv4.ip.compressed
-                    mask = interface.ipv4.network.netmask.exploded
-                    self.execute(f'ip add {ip} {mask}', prompt=[r'\(config-if\)#'])
-                else:
-                    self.execute('ip add dhcp', prompt=[r'\(config-if\)#'])
-                self.execute(f'no sh', prompt=[r'\(config-if\)#'])
-                self.execute('exit', prompt=[r'\(config\)#'])
-
-            # rute
-            if self.device.custom.get('routes'):
-                for r_name, route in self.device.custom['routes'].items():
-                    to_ip = ipaddress.IPv4Network(route['to_ip'])
-                    self.execute(f'ip route {to_ip.network_address} {to_ip.netmask.exploded} {route['via']}',
-                                 prompt=[r'\(config\)#'])
-
-            # rip
-            if self.device.type == 'router' and self.device.custom.get('rip'):
-                rip_dict = self.device.custom['rip']
-                self.execute('router rip', prompt=[r'\(config-router\)#'])
-                self.execute('version 2', prompt=[r'\(config-router\)#'])
-                self.execute('no auto-summary', prompt=[r'\(config-router\)#'])
-                networks = list(map(lambda str_addr: ipaddress.IPv4Network(str_addr), rip_dict.get('networks')))
-                for network in networks:
-                    self.execute(f'network {network.network_address}', prompt=[r'\(config-router\)#'])
-                self.execute('exit', prompt=[r'\(config\)#'])
-
-            # dhcp pools
-            if self.device.custom.get('dhcp_pools'):
-                for pool_name, pool in self.device.custom['dhcp_pools'].items():
-                    self.execute(f'ip dhcp pool {pool_name}', prompt=[r'\(dhcp-config\)#'])
-                    network_ip = ipaddress.IPv4Network(pool['network'])
-                    self.execute(f'network {network_ip.network_address.compressed} {network_ip.netmask.exploded}',
-                                 prompt=[r'\(dhcp-config\)#'])
-                    self.execute(f'default-router {pool['default_router']}', prompt=[r'\(dhcp-config\)#'])
-                    if (pool.get('domain_name')):
-                        self.execute(f'domain-name {pool['domain_name']}', prompt=[r'\(dhcp-config\)#'])
-                    if (pool.get('dns_server')):
-                        self.execute(f'dns-server {pool['dns_server']}', prompt=[r'\(dhcp-config\)#'])
-                    self.execute('exit', prompt=[r'\(config\)#'])
-                    if pool.get('excluded_address_ranges'):
-                        for r in pool['excluded_address_ranges']:
-                            start, end = r['start'], r['end']
-                            self.execute(f'ip dhcp excluded-address {start} {end}', prompt=[r'\(config\)#'])
-
-            # save
-            self.execute('end', prompt=[r'\w+#'])
-            out = self.execute('write', prompt=[], timeout=5)
-            if 'Continue? [no]:' in out or '[confirm]' in out:
-                self.execute('yes', prompt=[r'\w+#'])
-            self.execute('', prompt=[r'\w+#'])
+            self.move_to_global_conf()
+            self.configure_interfaces()
+            self.configure_routes()
+            self.configure_rip()
+            self.configure_dhcp_pools()
+            # REST enable
+            if self.device.name == 'CSR':
+                self.enable_rest()
+            self.save_config()
 
     def read(self) -> str:
         if self._shell.recv_ready():
             return self._shell.recv(999999999)
         return ''
 
-    # modificat aici
     def test_pings(self, topology_addresses: list[str]):
         pattern = r'Success rate is (\d{1,3}) percent'
         self.execute('\r', prompt=[r'\w+#'])
