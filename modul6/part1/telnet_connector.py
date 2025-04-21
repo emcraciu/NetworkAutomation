@@ -19,13 +19,18 @@ class TelnetConnector:
             port=self.connection.port
         )
 
+    def enable_rest(self):
+        self.execute('conf t', prompt=[r'\(config\)#'])
+        self.execute("ip http secure-server", prompt=[r'\(config\)#'])
+        self.execute('#restconf', prompt=[r'\(config\)#'])
+
     def do_initial_configuration(self):
         # configure IOU and IOSv
         if self.device.os == 'ios':
             self._initial_conf_ios()
 
         # configure CSR Router
-        elif self.device.os == 'iosexe':
+        elif self.device.os == 'iosxe':
             self._initial_conf_csr()
 
     def _initial_conf_ios(self):
@@ -43,7 +48,9 @@ class TelnetConnector:
         # configure ssh
         hostname = self.device.custom.hostname
         self.execute(f'hostname {hostname}', prompt=[r'\(config\)#'])
-        self.execute('crypto key generate rsa', prompt=[r'\(config\)#'])
+        out = self.execute('crypto key generate rsa modulus 1024', prompt=[r'\(config\)#', r'replace them\?'])
+        if 'replace them' in out:
+            self.execute('yes', prompt=[r'\(config\)#'])
         username = self.device.connections.ssh.credentials.login.username
         password = self.device.connections.ssh.credentials.login.password.plaintext
 
@@ -56,7 +63,9 @@ class TelnetConnector:
 
         # configure SCP server for napalm
         self.execute('ip scp server enable', prompt=[r'\(config\)#'])
-
+        enable_password = self.device.credentials.enable.password.plaintextif
+        if self.device.platform == 'iosv':
+            self.execute(f'enable secret {enable_password}', prompt=[r'\(config\)#'])
         # save configuration
         self.execute('end', prompt=[rf'{hostname}#'])
         self.execute('write', prompt=[rf'\[confirm\]|{hostname}#'])
