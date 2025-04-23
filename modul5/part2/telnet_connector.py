@@ -46,6 +46,8 @@ class TelnetConnector:
             self.execute('end', prompt=[rf'{hostname}#'])
             self.execute('write', prompt=[rf'\[confirm\]|{hostname}#'])
             self.execute('', prompt=[rf'{hostname}#'])
+        elif self.device.os == 'iosxe':
+            pass
 
     def disconnect(self):
         self._conn.close()

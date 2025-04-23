@@ -9,12 +9,12 @@ devices:
       hostname: em-r1
     connections:
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: modul6.part1.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5022 # replaces with yours
       ssh:
-        class: ssh_connector.SSHConnector
+        class: modul6.part1.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.11.1
         port: 22
@@ -22,20 +22,29 @@ devices:
           login:
             username: admin
             password: Cisco!23
+      napalm:
+        class: napalm
+        protocol: napalm
+        ip: 192.168.11.1
+        port: 22
+        credentials:
+          login:
+            username: admin
+            password: Cisco!23
 
-  Router:
+  CSR:
     os: iosxe
     type: router
     custom:
       hostname: em-r2
     connections:
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: modul6.part1.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5023 # replaces with yours
+        port: 5053 # replaces with yours
       ssh:
-        class: ssh_connector.SSHConnector
+        class: modul6.part1.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.102.2
         port: 22
@@ -44,14 +53,17 @@ devices:
             username: admin
             password: Cisco!23
 
-  CiscoIOSv15:
-    os: iosv
+  IOSv:
+    os: ios
     type: router
     custom:
       hostname: IOSv15
+    credentials:
+      enable:
+        password: Cisco!2345
     connections:
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: modul6.part1.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5019 # replaces with yours
@@ -64,7 +76,7 @@ devices:
             username: admin
             password: Cisco!23
 
-  CiscoFTD:
+  FTD:
     os: ftd
     type: ftd
     custom:
@@ -74,52 +86,6 @@ devices:
         protocol: ssh
         ip: 192.168.45.45 # replaces with yours
         port: 5021 # replaces with yours
-
-  DNS-1:
-    os: linux
-    type: server
-    custom:
-      hostname: DNS-1
-    connections:
-      ssh:
-        protocol: ssh
-        port: 22
-        ipv4: 192.168.100.1 # to be changed
-
-  UbuntuServer:
-    os: linux
-    type: server
-    custom:
-      hostname: UbuntuServer
-    connections:
-      vnc:
-        protocol: vnc
-        ip: 192.168.11.21
-        port: 5904 # replaces with yours
-
-  UbuntuDockerGuest-1:
-    os: linux
-    type: server
-    custom:
-      hostname: UbuntuDockerGuest-1
-    connections:
-      telnet:
-        class: telnet_connector.TelnetConnector
-        protocol: telnet
-        ip: 192.168.0.100
-        port: 5043 # replaces with yours
-
-  UbuntuDockerGuest-2:
-    os: linux
-    type: server
-    custom:
-      hostname: UbuntuDockerGuest-2
-    connections:
-      telnet:
-        class: telnet_connector.TelnetConnector
-        protocol: telnet
-        ip: 192.168.0.100
-        port: 5023 # replaces with yours
 
 topology:
   IOU1:
@@ -138,7 +104,7 @@ topology:
         link: csr
         ipv4: 192.168.102.1/24
 
-  Router:
+  CSR:
     interfaces:
       GigabitEthernet1:
         alias: initial
@@ -156,7 +122,7 @@ topology:
         link: link-ftd3
         ipv4: 192.168.106.1/24
 
-  CiscoIOSv15:
+  IOSv:
     interfaces:
       GigabitEthernet0/0:
         type: ethernet
@@ -174,7 +140,7 @@ topology:
         link: link-dns
         ipv4: 192.168.108.1/24
 
-  CiscoFTD:
+  FTD:
     interfaces:
       GigabitEthernet0/0:
         type: ethernet
@@ -196,5 +162,3 @@ topology:
         alias: to_CSR
         link: link-ftd3
         ipv4: 192.168.106.2/24
-
-
