@@ -3,8 +3,7 @@ from pyats.topology import loader
 
 from lib.rest_connector import RESTConnector
 
-tb = loader.load('testbed_example.yaml')
-
+tb = loader.load('Bibart/Incercare_pyATS/config.yaml')
 
 class Example(aetest.Testcase):
     @aetest.test
