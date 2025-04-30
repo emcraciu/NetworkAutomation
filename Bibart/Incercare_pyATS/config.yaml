@@ -38,7 +38,7 @@ devices:
 
     connections:
       ssh:
-        class: ssh_connector.SSHConnector
+        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.11.1
         port: 22
@@ -47,7 +47,7 @@ devices:
             username: user
             password: pass
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5033
@@ -73,13 +73,22 @@ devices:
           - 40.40.40.0/24
 
     connections:
+      rest:
+        class: lib.rest_connector.RESTConnector
+        protocol: https
+        port: 443
+        ip: 192.168.101.2
+        credentials:
+          login:
+            username: user
+            password: pass
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5038
       ssh:
-        class: ssh_connector.SSHConnector
+        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.101.2
         port: 22
@@ -103,7 +112,7 @@ devices:
 
     connections:
       ssh:
-        class: ssh_connector.SSHConnector
+        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.102.2
         port: 22
@@ -112,19 +121,24 @@ devices:
             username: user
             password: pass
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5037
 
   FTD:
-    type: firewall_thing
-    os: something
+    type: ftd
+    os: ftd
     custom:
       hostname: FTD
+      management_gateway: 192.169.103.1
+    credentials:
+      login:
+        username: admin
+        password: pass
     connections:
 #      ssh:
-#        class: ssh_connector.SSHConnector
+#        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
 #        protocol: ssh
 #        ip: 10.10.10.2
 #        port: 22
@@ -133,7 +147,7 @@ devices:
 #            username: user
 #            password: pass
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5040
@@ -145,7 +159,7 @@ devices:
       hostname: DNS1
     connections:
 #      ssh:
-#        class: ssh_connector.SSHConnector
+#        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
 #        protocol: ssh
 #        ip: 20.20.20.254
 #        port: 22
@@ -154,7 +168,7 @@ devices:
 #            username: user
 #            password: pass
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5034
@@ -179,7 +193,7 @@ devices:
         password: osboxes.org
     connections:
       ssh:
-        class: ssh_connector.SSHConnector
+        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.11.1
         port: 5058
@@ -193,7 +207,7 @@ devices:
     os: ubuntu
     connections:
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5058
@@ -203,7 +217,7 @@ devices:
     os: ubuntu
     connections:
       telnet:
-        class: telnet_connector.TelnetConnector
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5042
@@ -252,10 +266,10 @@ topology:
   FTD:
     interfaces:
       Gigabit0/0:
+        alias: management
         type: gigabit
-        alias: initial
         link: "IOU-FTD"
-#        ipv4: 192.168.103.2
+        ipv4: 192.168.103.2/24
       Gigabit0/1:
         type: gigabit
         link: "V15-FTD"

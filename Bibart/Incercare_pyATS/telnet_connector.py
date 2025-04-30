@@ -1,10 +1,10 @@
-import ipaddress
 import logging
 import telnetlib
 import time
+import re
 from typing import Optional
+import ipaddress
 
-from netmiko.base_connection import TelnetConnection
 from pyats.datastructures import AttrDict
 from pyats.topology import Device
 
@@ -24,6 +24,7 @@ class TelnetConnector:
             port=self.connection.port,
         )
 
+    # @return str
     def read(self) -> str:
         return self._conn.read_very_eager().decode()
 
@@ -43,8 +44,12 @@ class TelnetConnector:
     def write(self, command: str) -> None:
         self._conn.write(command.encode()+b'\n')
 
-    # modificat aici
-    def execute(self, command, **kwargs):
+    #
+    def execute(self, command,**kwargs):
+        if not self._conn:
+            logger.error('Connection object changed to none before execute statement')
+            raise RuntimeError('Connection object changed to none before execute statement')
+            return
         prompt: list[bytes] = list(map(lambda s: s.encode(), kwargs['prompt']))
         self._conn.write(f'{command}\n'.encode())
         if kwargs.get('timeout'):
@@ -56,7 +61,7 @@ class TelnetConnector:
 
     def try_write_enable_pass(self, last_out: str):
         if 'Password:' in last_out:
-            logger.warning("HERE DJ")
+            # logger.warning("HERE DJ")
             self.execute(self.device.credentials.default.enable_password.plaintext + '\r',prompt=[r'\(config\)#', r'\w+#', r'\w+\>'])
 
     def try_skip_initial_config_dialog(self, last_out: str):
@@ -67,6 +72,55 @@ class TelnetConnector:
             # logger.info('4 is one')
             self.write('\r')
             self.execute('', prompt=[r'\w+\>'])
+
+    def _initial_config_ftd(self):
+        username = self.device.credentials.login.username
+        password = self.device.credentials.login.password.plaintext
+        management_ip = self.device.interfaces['management'].ipv4.ip.compressed
+        management_ip_mask = self.device.interfaces['management'].ipv4.network.netmask.exploded
+        management_gateway = ipaddress.ip_address(self.device.custom['management_gateway']).compressed
+
+        # self.execute('\n', prompt=[r'firepower login:'])
+        self.write('\n')
+        time.sleep(2)
+        out = self.read()
+        pattern = r'(?:FTD login\:\s*$)|(?:Password\:\s*$)|(?:firepower login\:)'
+        re_match = re.findall(pattern, out)
+        if re_match:
+            # need to login
+            match = re_match[-1]
+            if 'Password:' in match:
+                self.execute('\n', prompt=[r'FTD login\:'])
+            self.execute(username, prompt=[r'Password:'])
+            out = self.execute(password, prompt=[r'to display the EULA','\>\s*'])
+
+        # Already configured -> need to wipe current config
+        if '> ' in out:
+        #     self.execute('configure manager delete',prompt=[r'Do you want to continue\[yes\/no\]\:'])
+        #     self.execute('yes', prompt=[r'\> '])
+        #     self.execute('reboot', prompt=[r"Please enter \'YES\' or \'NO\'\:"])
+        #     self.write('YES')
+        #     for i in range(5):
+        #         out = self.read()
+        #         if 'FTD login:' in out:
+        #             break
+        #     else:
+        #         raise RuntimeError('FTD did not finish reboot')
+        #     self.execute('configure fierewall routed', prompt=[r'\> '])
+        # TODO:
+            """
+            configure network management-data-interface 
+            > Unable to access DetectionEngine::bulkLoad
+            """
+            self.execute(f'configure network ipv4 manual {management_ip} {management_ip_mask} {management_gateway}', prompt=[r'\> '])
+        # Initial Startup
+        # while '--More--':
+        #     # space new line
+        #     self.execute('\n', prompt=[r'to AGREE to the EULA'])
+        #     self.execute('\n', prompt=[r'Enter new password:'])
+        # password = self.device.connections.ssh.credentials.login.password.plaintext
+        # self.execute(password, prompt=[r'Confirm new password:'])
+        # self.execute(password, prompt=[r'IPv4\? \(y/n\) \[y\]:'])
 
     def move_to_global_config(self):
         self.write('\r')
@@ -130,10 +184,12 @@ class TelnetConnector:
 
             # enable secret
             if self.device.platform == 'iou':
-                logger.warning(f'En pass : {self.device.credentials.default.enable_password.plaintext}')
+                # logger.warning(f'En pass : {self.device.credentials.default.enable_password.plaintext}')
                 self.execute(f'enable secret {self.device.credentials.default.enable_password.plaintext}', prompt=[r'\(config\)#'])
 
             self.save_config()
+        elif self.device.os == 'ftd':
+            self._initial_config_ftd()
 
     def is_connected(self):
         return not self._conn.eof
