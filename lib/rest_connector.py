@@ -1,3 +1,5 @@
+import re
+
 import requests
 from requests.auth import HTTPBasicAuth
 import json
@@ -17,6 +19,7 @@ class RESTConnector:
         self._url = None
         self.device = device
         self.connection: Optional[AttrDict] = None
+        self.api_endpoints: list[str] = None
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def connect(self, **kwargs):
@@ -48,9 +51,30 @@ class RESTConnector:
         response = requests.get(url, auth=self._auth, headers=self._headers, verify=False)
         self.resconf_capabilities = self.__extract_endpoints(response.json())
 
+    def get_api_endpoint(self, url):
+        response = requests.get(url, auth=self._auth, headers=self._headers, verify=False)
+        with open(f"{url.split('/')[-2]}.yang", 'w') as file:
+            file.write(response.text)
+        text = response.text
+        pattern = r'container\s(\w+) \{'
+        for line in text.splitlines():
+            match = re.search(pattern, line)
+            if match:
+                name = match.group(1)
+                try:
+                    self.api_endpoints.remove(url)
+                except ValueError:
+                    pass
+                self.api_endpoints.append(f'{url.rsplit('/', 1)[0]}:{name}')
+                print(self.api_endpoints[-1])
+
     def __extract_endpoints(self, response):
-        # your code here
-        pass
+        self.api_endpoints = []
+        for key, value in response.get('ietf-yang-library:modules-state', []).items():
+            if key != 'module':
+                continue
+            for endpoint in value:
+                self.api_endpoints.append(endpoint.get('schema'))
 
     def disconnect(self):
         pass
