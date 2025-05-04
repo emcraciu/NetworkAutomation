@@ -118,7 +118,7 @@ class SSHConnector:
 
     def read(self) -> str:
         if self._shell.recv_ready():
-            return self._shell.recv(999999999)
+            return str(self._shell.recv(999999999))
         return ''
 
     def test_pings(self, topology_addresses: list[str]):

@@ -44,6 +44,12 @@ class TelnetConnector:
     def write(self, command: str) -> None:
         self._conn.write(command.encode()+b'\n')
 
+    def write_raw(self, command: str) -> None:
+        """
+        Writes the exact command, without adding a \n
+        """
+        self._conn.write(command.encode())
+
     #
     def execute(self, command,**kwargs):
         if not self._conn:
@@ -79,7 +85,10 @@ class TelnetConnector:
         management_ip = self.device.interfaces['management'].ipv4.ip.compressed
         management_ip_mask = self.device.interfaces['management'].ipv4.network.netmask.exploded
         management_gateway = ipaddress.ip_address(self.device.custom['management_gateway']).compressed
-
+        dns = ipaddress.ip_address(self.device.custom['dns']).compressed
+        domain = self.device.custom['domain']
+        default_username = self.device.credentials.default.username
+        default_password = self.device.credentials.default.password.plaintext
         # self.execute('\n', prompt=[r'firepower login:'])
         self.write('\n')
         time.sleep(2)
@@ -91,11 +100,54 @@ class TelnetConnector:
             match = re_match[-1]
             if 'Password:' in match:
                 self.execute('\n', prompt=[r'FTD login\:'])
-            self.execute(username, prompt=[r'Password:'])
-            out = self.execute(password, prompt=[r'to display the EULA','\>\s*'])
+            self.write(default_username)
+            time.sleep(1)
+            out = self.read()
+            if 'Enter new password:' in out:
+                self.write(password)
+                time.sleep(1)
+                out = self.read()
+            else:
+                self.write(default_password)
+                time.sleep(1)
+                out = self.read()
+
+        if ('Press <ENTER> to display the EULA:' in out
+                or 'You must change the password' in out
+                or '--More--' in out):
+            # Need to go through agreement
+            if 'Press <ENTER> to display the EULA:' in out or '--More--' in out:
+                out = self.execute(' \r\n', prompt=[r'\-\-More\-\-'])
+                # Initial Startup
+                while not 'AGREE to EULA' in out:
+                    out = self.execute(' \r\n', prompt=[r'to AGREE to the EULA', r'\-\-More\-\-'])
+                self.execute('YES', prompt=[r'Enter new password\:'])
+
+            self.execute(password, prompt=[r'Confirm new password:'])
+            self.execute(password, prompt=[r'IPv4\? \(y/n\) \[y\]:'])
+            self.execute('y', prompt=[r'IPv6\? \(y/n\) \[n\]:'])
+            self.execute('n', prompt=[r'\(dhcp\/manual\) \[manual\]:'])
+            self.execute('manual', prompt=[r'management interface \[.*\]:'])
+            self.execute(management_ip, prompt=[r'netmask for the management interface \[.*\]:'])
+            self.execute(management_ip_mask, prompt=[r'gateway for the management interface \[.*\]:'])
+            self.execute(management_gateway, prompt=[r'fully qualified hostname for this system \[.*\]:'])
+            self.execute('firepower', prompt=[r'comma\-separated list of DNS servers or \'none\' \[.*\]:'])
+            self.execute(dns, prompt=[r'comma\-separated list of search domains or \'none\' \[\]:'])
+            self.execute(domain, prompt=[r'Manage the device locally\? \(yes\/no\) \[yes\]:'])
+            self.write('yes')
+
+            # Wait for setup to finish
+            for _ in range(5):
+                time.sleep(1)
+                out = self.read()
+                if '>' in out:
+                    break
+            else:
+                logger.error('FTD Config failed after entering all initial config details and waiting to load.')
+                return
 
         # Already configured -> need to wipe current config
-        if '> ' in out:
+        else:
         #     self.execute('configure manager delete',prompt=[r'Do you want to continue\[yes\/no\]\:'])
         #     self.execute('yes', prompt=[r'\> '])
         #     self.execute('reboot', prompt=[r"Please enter \'YES\' or \'NO\'\:"])
@@ -113,14 +165,6 @@ class TelnetConnector:
             > Unable to access DetectionEngine::bulkLoad
             """
             self.execute(f'configure network ipv4 manual {management_ip} {management_ip_mask} {management_gateway}', prompt=[r'\> '])
-        # Initial Startup
-        # while '--More--':
-        #     # space new line
-        #     self.execute('\n', prompt=[r'to AGREE to the EULA'])
-        #     self.execute('\n', prompt=[r'Enter new password:'])
-        # password = self.device.connections.ssh.credentials.login.password.plaintext
-        # self.execute(password, prompt=[r'Confirm new password:'])
-        # self.execute(password, prompt=[r'IPv4\? \(y/n\) \[y\]:'])
 
     def move_to_global_config(self):
         self.write('\r')

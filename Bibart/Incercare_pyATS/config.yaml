@@ -131,11 +131,16 @@ devices:
     os: ftd
     custom:
       hostname: FTD
-      management_gateway: 192.169.103.1
+      dns: 20.20.20.254
+      domain: none
+      management_gateway: 192.168.103.1
     credentials:
       login:
         username: admin
         password: pass
+      default:
+        username: admin
+        password: Admin123
     connections:
 #      ssh:
 #        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
@@ -150,7 +155,7 @@ devices:
         class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5040
+        port: 5013
 
   DNS1:
     type: dns-server
