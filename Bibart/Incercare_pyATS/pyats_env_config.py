@@ -12,7 +12,7 @@ from pyats.topology import loader
 from Bibart.Incercare_pyATS.ssh_connector import SSHConnector
 from telnet_connector import TelnetConnector
 
-testbed = loader.load('config.yaml')
+testbed = loader.load('Bibart/Incercare_pyATS/config.yaml')
 topology_addresses = [interf.ipv4.ip.compressed for dev in testbed.devices.values() for interf in dev.interfaces.values() if interf.ipv4]
 
 logger = logging.getLogger(__name__)
