@@ -49,6 +49,8 @@ class TelnetConnector:
         Writes the exact command, without adding a \n
         """
         self._conn.write(command.encode())
+        out = self._conn.read_very_eager().decode()
+        return out
 
     #
     def execute(self, command,**kwargs):
@@ -101,7 +103,7 @@ class TelnetConnector:
             if 'Password:' in match:
                 self.execute('\n', prompt=[r'FTD login\:'])
             self.write(default_username)
-            time.sleep(1)
+            time.sleep(3)
             out = self.read()
             if 'Enter new password:' in out:
                 self.write(password)
@@ -109,7 +111,7 @@ class TelnetConnector:
                 out = self.read()
             else:
                 self.write(default_password)
-                time.sleep(1)
+                time.sleep(10)
                 out = self.read()
 
         if ('Press <ENTER> to display the EULA:' in out
@@ -117,10 +119,13 @@ class TelnetConnector:
                 or '--More--' in out):
             # Need to go through agreement
             if 'Press <ENTER> to display the EULA:' in out or '--More--' in out:
-                out = self.execute(' \r\n', prompt=[r'\-\-More\-\-'])
+                out = self.execute(' \n\r', prompt=[r'\-\-More\-\-'])
                 # Initial Startup
-                while not 'AGREE to EULA' in out:
-                    out = self.execute(' \r\n', prompt=[r'to AGREE to the EULA', r'\-\-More\-\-'])
+                for _ in range(20):
+                    if 'AGREE to EULA' in out:
+                        break
+                    out = self.write_raw(' ')
+                    time.sleep(.3)
                 self.execute('YES', prompt=[r'Enter new password\:'])
 
             self.execute(password, prompt=[r'Confirm new password:'])
@@ -147,6 +152,8 @@ class TelnetConnector:
                 return
 
         # Already configured -> need to wipe current config
+        elif 'Login incorrect' in out:
+            logger.error("LOGIN INCORRECT. Tried default password")
         else:
         #     self.execute('configure manager delete',prompt=[r'Do you want to continue\[yes\/no\]\:'])
         #     self.execute('yes', prompt=[r'\> '])

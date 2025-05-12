@@ -155,7 +155,7 @@ devices:
         class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5013
+        port: 5039
 
   DNS1:
     type: dns-server
