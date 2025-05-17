@@ -1,3 +1,5 @@
+import re
+
 import requests
 from requests.auth import HTTPBasicAuth
 import json
@@ -48,6 +50,23 @@ class RESTConnector:
         url = self._url + restconf
         response = requests.get(url, auth=self._auth, headers=self._headers, verify=False)
         self.resconf_capabilities = self.__extract_endpoints(response.json())
+
+    def get_api_endpoint(self, url):
+        response = requests.get(url, auth=self._auth, headers=self._headers, verify=False)
+        with open(f"{url.split('/')[-2]}.yang", 'w') as file:
+            file.write(response.text)
+        text = response.text
+        pattern = r'container\s(\w+) \{'
+        for line in text.splitlines():
+            match = re.search(pattern, line)
+            if match:
+                name = match.group(1)
+                try:
+                    self.api_endpoints.remove(url)
+                except ValueError:
+                    pass
+                self.api_endpoints.append(f'{url.rsplit('/', 1)[0]}:{name}')
+                print(self.api_endpoints[-1])
 
     def __extract_endpoints(self, response):
         self.api_endpoints = []
