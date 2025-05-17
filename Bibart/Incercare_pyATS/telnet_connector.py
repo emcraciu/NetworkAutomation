@@ -44,7 +44,7 @@ class TelnetConnector:
     def write(self, command: str) -> None:
         self._conn.write(command.encode()+b'\n')
 
-    def write_raw(self, command: str) -> None:
+    def write_raw(self, command: str) -> str:
         """
         Writes the exact command, without adding a \n
         """
@@ -52,7 +52,6 @@ class TelnetConnector:
         out = self._conn.read_very_eager().decode()
         return out
 
-    #
     def execute(self, command,**kwargs):
         if not self._conn:
             logger.error('Connection object changed to none before execute statement')

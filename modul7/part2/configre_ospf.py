@@ -8,8 +8,8 @@ from genie.libs.conf.ospf.ospf import Ospf
 from genie.libs.conf.interface.iosxe import Interface
 
 tb = loader.load('testbed_example2.yaml')
-device_csr = tb.devices['em-r2']
-device_iosv = tb.devices['IOSv15']
+# device_csr = tb.devices['em-r2']
+device_iosv = tb.devices['V15']
 
 #
 # class Example(aetest.Testcase):
@@ -49,6 +49,7 @@ class Example2(aetest.Testcase):
             intf = device_iosv.interfaces[intf_name]
             int_f = Interface(name=intf.name)
             int_f.device = device_iosv
+            device_iosv.configure
             int_f.ipv4 = intf.ipv4
             config = int_f.build_config(apply=False)
             device_iosv.configure(config.cli_config.data)
