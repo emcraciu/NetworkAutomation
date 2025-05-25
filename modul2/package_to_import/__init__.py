@@ -1,2 +1,0 @@
-from modul2.package_to_import.package_module1 import package_module_function
-package_variable = 'package_variable'
