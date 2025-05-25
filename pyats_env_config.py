@@ -1,18 +1,13 @@
 import logging
 import time
-from napalm import *
-from napalm.base import NetworkDriver
-
 from UbuntuServerConfig import configure as configure_ubuntu_server
-
 from pyats import aetest
 from pyats.aetest.main import AEtest
 from pyats.topology import loader
+from connectors_lib.ssh_connector import SSHConnector
+from connectors_lib.telnet_connector import TelnetConnector
 
-from Bibart.Incercare_pyATS.ssh_connector import SSHConnector
-from telnet_connector import TelnetConnector
-
-testbed = loader.load('Bibart/Incercare_pyATS/config.yaml')
+testbed = loader.load('testbeds/config.yaml')
 topology_addresses = [interf.ipv4.ip.compressed for dev in testbed.devices.values() for interf in dev.interfaces.values() if interf.ipv4]
 
 logger = logging.getLogger(__name__)
@@ -45,7 +40,7 @@ class ConnectionAttempt(aetest.CommonSetup):
 class InitialConfigTests(aetest.Testcase):
     @aetest.test
     def UbuntuServer_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
-        configure_ubuntu_server()
+        configure_ubuntu_server(testbed.devices['UbuntuServer'])
 
     @aetest.test
     def IOU1_initial_conf(self, telnet_objects: dict[str,TelnetConnector]):

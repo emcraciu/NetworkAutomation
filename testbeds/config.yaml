@@ -50,7 +50,7 @@ devices:
         class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5033
+        port: 5050
 
   CSR:
     type: router
@@ -86,7 +86,7 @@ devices:
         class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5038
+        port: 5042
       ssh:
         class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
         protocol: ssh
@@ -124,7 +124,7 @@ devices:
         class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5037
+        port: 5046
 
   FTD:
     type: ftd
@@ -155,7 +155,7 @@ devices:
         class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5039
+        port: 5051
 
   DNS1:
     type: dns-server
@@ -185,11 +185,32 @@ devices:
     custom:
       hostname: UbuntuServer
       routes:
-        to_guest_network:
+        iou_csr:
           to_ip: 192.168.101.0/24
           via: 192.168.11.1
-        to_csr_network:
+        iou_v15:
           to_ip: 192.168.102.0/24
+          via: 192.168.11.1
+        iou_ftd:
+          to_ip: 192.168.103.0/24
+          via: 192.168.11.1
+        last_route:
+          to_ip: 192.168.104.0/24
+          via: 192.168.11.1
+        to_guest1:
+          to_ip: 50.50.50.0/24
+          via: 192.168.11.1
+        to_guest2:
+          to_ip: 30.30.30.0/24
+          via: 192.168.11.1
+        to_v15_ftd:
+          to_ip: 10.10.10.0/24
+          via: 192.168.11.1
+        to_csr_ftd:
+          to_ip: 40.40.40.0/24
+          via: 192.168.11.1
+        to_dns:
+          to_ip: 20.20.20.0/24
           via: 192.168.11.1
 
     credentials:
@@ -225,7 +246,7 @@ devices:
         class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5042
+        port: 5048
 
 topology:
   IOU1:
