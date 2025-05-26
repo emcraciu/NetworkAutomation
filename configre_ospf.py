@@ -1,6 +1,3 @@
-import ipaddress
-from multiprocessing.util import log_to_stderr
-
 from pyats import aetest
 from pyats.aetest.steps import Steps, Step
 from pyats.topology import loader, Device
@@ -18,7 +15,8 @@ class Example(aetest.Testcase):
                 interface = Interface(name='GigabitEthernet1')
                 interface.device = device
                 interface.ipv4 = pyats_interface.ipv4
-                config = interface.build_config(config.cli_config.data)
+                config = interface.build_config(apply=False)
+                device.configure(config.cli_config.data)
 
         with steps.start(f'Configuring OSPF on {device_name}'):
             ospf = Ospf()
@@ -26,10 +24,14 @@ class Example(aetest.Testcase):
             # ospf.device_attr[device].vrf_attr['default'].router_id = '192.168.101.2'
             area = ospf.device_attr[device].vrf_attr['default'].area_attr[0]
             area.area = 0
-            area.networks.append('0.0.0.0 255.255.255.255')
+            # for interface in ospf.device_attr[device].interfaces:
+            #     print(interface)
+            # area.areanetwork_keys.append('0.0.0.0 255.255.255.255')
+            # area.areanetwork_keys.data.add('0.0.0.0 255.255.255.255')
 
             config = ospf.build_config(devices=[device], apply=False)
-            print(config)
+            device.configure(config[device_name].cli_config.data)
+            print(config[device_name].cli_config.data)
 
     @aetest.test
     def configure_ospf_devices(self, steps: Steps):
