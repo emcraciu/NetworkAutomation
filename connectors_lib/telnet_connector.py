@@ -231,12 +231,10 @@ class TelnetConnector:
             self.configure_ssh()
             # for napalm
             self.configure_scp_server()
-
             # enable secret
             if self.device.platform == 'iou':
                 # logger.warning(f'En pass : {self.device.credentials.default.enable_password.plaintext}')
                 self.execute(f'enable secret {self.device.credentials.default.enable_password.plaintext}', prompt=[r'\(config\)#'])
-
             self.save_config()
         elif self.device.os == 'ftd':
             self._initial_config_ftd()

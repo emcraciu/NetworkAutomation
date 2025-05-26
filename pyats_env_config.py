@@ -37,6 +37,10 @@ class ConnectionAttempt(aetest.CommonSetup):
     def connect_telnet_V15(self,  telnet_objects: dict[str, TelnetConnector]):
         self.connect_device(telnet_objects, 'V15')
 
+    @aetest.subsection
+    def connect_telnet_FTD(self, telnet_objects: dict[str, TelnetConnector]):
+        self.connect_device(telnet_objects, 'FTD')
+
 class InitialConfigTests(aetest.Testcase):
     @aetest.test
     def UbuntuServer_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
@@ -53,6 +57,10 @@ class InitialConfigTests(aetest.Testcase):
     @aetest.test
     def V15_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
         telnet_objects['V15'].do_initial_config()
+
+    @aetest.test
+    def FTD_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
+        telnet_objects['FTD'].do_initial_config()
 
 class SSHConnectorTests(aetest.Testcase):
     @aetest.test

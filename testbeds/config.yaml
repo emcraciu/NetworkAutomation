@@ -38,7 +38,7 @@ devices:
 
     connections:
       ssh:
-        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+        class: connectors_lib.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.11.1
         port: 22
@@ -47,7 +47,7 @@ devices:
             username: user
             password: pass
       telnet:
-        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5050
@@ -83,12 +83,12 @@ devices:
             username: user
             password: pass
       telnet:
-        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5042
       ssh:
-        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+        class: connectors_lib.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.101.2
         port: 22
@@ -112,7 +112,7 @@ devices:
 
     connections:
       ssh:
-        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+        class: connectors_lib.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.102.2
         port: 22
@@ -121,7 +121,7 @@ devices:
             username: user
             password: pass
       telnet:
-        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5046
@@ -143,7 +143,7 @@ devices:
         password: Admin123
     connections:
 #      ssh:
-#        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+#        class: connectors_lib.ssh_connector.SSHConnector
 #        protocol: ssh
 #        ip: 10.10.10.2
 #        port: 22
@@ -152,7 +152,7 @@ devices:
 #            username: user
 #            password: pass
       telnet:
-        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5051
@@ -164,7 +164,7 @@ devices:
       hostname: DNS1
     connections:
 #      ssh:
-#        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+#        class: connectors_lib.ssh_connector.SSHConnector
 #        protocol: ssh
 #        ip: 20.20.20.254
 #        port: 22
@@ -173,7 +173,7 @@ devices:
 #            username: user
 #            password: pass
       telnet:
-        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5034
@@ -219,7 +219,7 @@ devices:
         password: osboxes.org
     connections:
       ssh:
-        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+        class: connectors_lib.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.11.1
         port: 5058
@@ -233,7 +233,7 @@ devices:
     os: ubuntu
     connections:
       telnet:
-        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5058
@@ -243,7 +243,7 @@ devices:
     os: ubuntu
     connections:
       telnet:
-        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
         port: 5048
