@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, encoding='utf-8')
 
 def configure(device: Device):
-
     eth1 = device.interfaces['eth1']
     print(eth1)
     commands = [
@@ -20,5 +19,5 @@ def configure(device: Device):
     for c in commands:
 #        logger.info(f'executing: {c.split(' ')}')
        out = Popen(c.split(' '), stdout=PIPE, stderr=PIPE).communicate()
-       logger.warn(out)
+       # logger.warn(out)
 

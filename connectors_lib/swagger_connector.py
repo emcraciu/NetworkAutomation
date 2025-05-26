@@ -46,9 +46,9 @@ class SwaggerConnector:
         self.client = swagger_client
 
     def __login(self, username: Optional[str] = None, password: Optional[str] = None):
-        endspoint = '/api/fdm/latest/fdm/token'
+        endpoint = '/api/fdm/latest/fdm/token'
         response = requests.post(
-            self._url + endspoint,
+            self._url + endpoint,
             verify=False,
             data=json.dumps({'username': username, 'password': password, 'grant_type': 'password'}),
             headers=self._headers

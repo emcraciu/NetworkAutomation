@@ -19,18 +19,21 @@ devices:
 
       dhcp_pools:
         guests:
-          network: 192.168.101.0/24
-          default_router: 192.168.101.1
-          dns_server: 192.168.10.10
+          network: 192.168.103.0/24
+          default_router: 192.168.103.1
+          dns_server: 20.20.20.254
           domain_name: savnet.hu
           excluded_address_ranges:
-            - {start: 192.168.101.1, end: 192.168.101.99}
-            - {start: 192.168.101.201, end: 192.168.101.254}
+            - {start: 192.168.103.1, end: 192.168.103.99}
+            - {start: 192.168.103.201, end: 192.168.103.254}
 
       routes:
         to_server:
           to_ip: 192.168.10.0/24
           via: 192.168.11.254
+        to_docker_guest2:
+          to_ip: 30.30.30.0/24
+          via: 192.168.101.2
 
     credentials:
       default:
@@ -71,6 +74,10 @@ devices:
           - 192.168.101.0/24
           - 50.50.50.0/24
           - 40.40.40.0/24
+      routes:
+        to_docker_guest2:
+          to_ip: 30.30.30.0/24
+          via: 40.40.40.2
 
     connections:
       rest:
@@ -86,7 +93,7 @@ devices:
         class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5042
+        port: 5016
       ssh:
         class: connectors_lib.ssh_connector.SSHConnector
         protocol: ssh
@@ -103,12 +110,15 @@ devices:
     os: ios
     custom:
       hostname: V15
-
       rip:
         networks:
           - 192.168.102.0/24
           - 10.10.10.0/24
           - 20.20.20.0/24
+      routes:
+        to_docker_guest2:
+          to_ip: 30.30.30.0/24
+          via: 192.168.103.2
 
     connections:
       ssh:
@@ -124,7 +134,7 @@ devices:
         class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5046
+        port: 5019
 
   FTD:
     type: ftd
@@ -142,20 +152,29 @@ devices:
         username: admin
         password: Admin123
     connections:
-#      ssh:
-#        class: connectors_lib.ssh_connector.SSHConnector
-#        protocol: ssh
-#        ip: 10.10.10.2
-#        port: 22
-#        credentials:
-#          login:
-#            username: user
-#            password: pass
+      ssh:
+        class: connectors_lib.ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.103.2
+        port: 22
+        credentials:
+          login:
+            username: admin
+            password: Cisco@123
       telnet:
         class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5051
+        port: 5022
+      rest:
+        class: connectors_lib.swagger_connector.SwaggerConnector
+        protocol: https
+        ip: 192.168.103.2
+        port: 443
+        credentials:
+          login:
+            username: admin
+            password: Cisco@123
 
   DNS1:
     type: dns-server
@@ -291,23 +310,36 @@ topology:
 
   FTD:
     interfaces:
-      Gigabit0/0:
+#      Gigabit0/0:
+#        alias: management
+#        type: gigabit
+#        link: "IOU-FTD"
+#        ipv4: 192.168.103.2/24
+#      Gigabit0/1:
+#        type: gigabit
+#        link: "V15-FTD"
+##        ipv4: 10.10.10.2/24
+#      Gigabit0/2:
+#        type: gigabit
+#        link: "FTD-GUEST2"
+##        ipv4: 30.30.30.1/24
+#      Gigabit0/3:
+#        type: gigabit
+#        link: "FTD-CSR"
+##        ipv4: 40.40.40.2/2
+      Management0/0:
+        type: ethernet
         alias: management
-        type: gigabit
-        link: "IOU-FTD"
+        link: ftd_mgmt
         ipv4: 192.168.103.2/24
-      Gigabit0/1:
-        type: gigabit
-        link: "V15-FTD"
-#        ipv4: 10.10.10.2/24
-      Gigabit0/2:
-        type: gigabit
-        link: "FTD-GUEST2"
-#        ipv4: 30.30.30.1/24
-      Gigabit0/3:
-        type: gigabit
-        link: "FTD-CSR"
-#        ipv4: 40.40.40.2/24
+      GigabitEthernet0/0:
+        type: ethernet
+        link: ftd-docker-guest2
+        ipv4: 30.30.30.1/24
+      GigabitEthernet0/1:
+        type: ethernet
+        link: ftd-CSR
+        ipv4: 40.40.40.2/24
 
   CSR:
     interfaces:
