@@ -90,8 +90,7 @@ class TelnetConnector:
         domain = self.device.custom['domain']
         default_username = self.device.credentials.default.username
         default_password = self.device.credentials.default.password.plaintext
-        # self.execute('\n', prompt=[r'firepower login:'])
-        self.write('\n')
+        self.write('\n\r')
         time.sleep(2)
         out = self.read()
         pattern = r'(?:FTD login\:\s*$)|(?:Password\:\s*$)|(?:firepower login\:)'
@@ -152,8 +151,9 @@ class TelnetConnector:
 
         # Already configured -> need to wipe current config
         elif 'Login incorrect' in out:
-            logger.error("LOGIN INCORRECT. Tried default password")
+            logger.error("Device is already configured. Default password and username did not work.")
         else:
+            return
         #     self.execute('configure manager delete',prompt=[r'Do you want to continue\[yes\/no\]\:'])
         #     self.execute('yes', prompt=[r'\> '])
         #     self.execute('reboot', prompt=[r"Please enter \'YES\' or \'NO\'\:"])
@@ -170,7 +170,7 @@ class TelnetConnector:
             configure network management-data-interface 
             > Unable to access DetectionEngine::bulkLoad
             """
-            self.execute(f'configure network ipv4 manual {management_ip} {management_ip_mask} {management_gateway}', prompt=[r'\> '])
+            # self.execute(f'configure network ipv4 manual {management_ip} {management_ip_mask} {management_gateway}', prompt=[r'\> '])
 
     def move_to_global_config(self):
         self.write('\r')
