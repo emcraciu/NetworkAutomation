@@ -11,6 +11,8 @@ from paramiko import SSHClient
 from paramiko.client import AutoAddPolicy
 from pyats.topology import Device
 
+from ping_helper import test_pings as ping_helper_test_pings
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -167,35 +169,12 @@ class SSHConnector:
                 result: True if all pings succeeded, False otherwise
                 dict: Target ip, Result of ping to said Ip
         """
-        ping_results: dict[str, bool] = {}
-        pattern = r'Success rate is (\d{1,3}) percent'
-        self.execute('\r', prompt=[r'\w+#'])
-        for addr in topology_addresses:
-            out = self.execute(f'ping {addr}', prompt=[])
-            matched_regex = False
-            percentage = 0
-            for _ in range(8):
-                time.sleep(1)
-                if _ == 0:
-                    out = out + self.read()
-                else:
-                    out = self.read()
-                match = re.search(pattern, out)
-                if not match:
-                    continue
-                matched_regex = True
-                percentage = int(match.group(1))
-                break
-            if not matched_regex:
-                logger.error(out)
-                percentage = 0
-            if percentage == 0:
-                ping_results[addr] = False
-                logger.warning('Ping from %s to %s failed\n', self.device.name, addr)
-            else:
-                ping_results[addr] = True
-                logger.warning('Ping from %s to %s succeeded\n', self.device.name, addr)
-        return all([res for res in ping_results.values()]), ping_results
+        return ping_helper_test_pings(
+            topology_addresses,
+            execute=self.execute,
+            read=self.read,
+            device_name=self.device.name
+        )
 
     def is_connected(self)-> bool:
         """
