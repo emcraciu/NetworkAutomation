@@ -88,7 +88,7 @@ class TelnetConnector:
                 The output of the command until (including) the regex match
         """
         if not self._conn:
-            logger.error('Connection object changed to none before execute statement')
+            logger.warning('Connection object changed to none before execute statement')
             raise RuntimeError('Connection object changed to none before execute statement')
         prompt: list[bytes] = list(map(lambda s: s.encode(), kwargs['prompt']))
         self._conn.write(f'{command}\n'.encode())

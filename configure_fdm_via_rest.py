@@ -88,14 +88,15 @@ class REST_config(aetest.Testcase):
         Creates an access rule to allow all traffic to security zone 0
         """
         with steps.start('Creating Access Rule'):
+            rule_name = "Allow_Some"
             policy_list_id = swagger.client.AccessPolicy.getAccessPolicyList().result().items[0].id
             access_rules = swagger.client.AccessPolicy.getAccessRuleList(parentId=policy_list_id).result().items
-            if len([rule for rule in access_rules if rule.name == 'AccessRule10']) == 0:
+            if len([rule for rule in access_rules if rule.name == rule_name]) == 0:
                 model = swagger.client.get_model('AccessRule')
                 res = swagger.client.AccessPolicy.addAccessRule(
                     parentId=policy_list_id,
                     body=model(
-                        name='AccessRule10',
+                        name=rule_name,
                         ruleAction='PERMIT',
                     )
                 )

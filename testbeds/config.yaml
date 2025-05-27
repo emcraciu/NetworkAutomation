@@ -81,7 +81,7 @@ devices:
 
     connections:
       rest:
-        class: lib.rest_connector.RESTConnector
+        class: connectors_lib.rest_connector.RESTConnector
         protocol: https
         port: 443
         ip: 192.168.101.2

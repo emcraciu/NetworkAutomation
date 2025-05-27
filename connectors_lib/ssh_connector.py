@@ -5,6 +5,8 @@ import ipaddress
 import time
 import logging
 import re
+from typing import Tuple
+
 from paramiko import SSHClient
 from paramiko.client import AutoAddPolicy
 from pyats.topology import Device
@@ -157,10 +159,15 @@ class SSHConnector:
             return str(self._shell.recv(999999999))
         return ''
 
-    def test_pings(self, topology_addresses: list[str]):
+    def test_pings(self, topology_addresses: list[str]) -> Tuple[bool, dict[str, bool]]:
         """
-        Performs pings to all addresses in topology_addresses.
+        Performs pings to all addresses in topology_addresses.(All interface ips in the testbed)
+        Returns:
+            (result: bool, dict):
+                result: True if all pings succeeded, False otherwise
+                dict: Target ip, Result of ping to said Ip
         """
+        ping_results: dict[str, bool] = {}
         pattern = r'Success rate is (\d{1,3}) percent'
         self.execute('\r', prompt=[r'\w+#'])
         for addr in topology_addresses:
@@ -180,17 +187,21 @@ class SSHConnector:
                 percentage = int(match.group(1))
                 break
             if not matched_regex:
-                raise RuntimeError('Regex was not matched at ping')
+                logger.error(out)
+                percentage = 0
             if percentage == 0:
-                return False, addr
-            logger.warning('Ping from %s to %s succeeded\n', self.device, addr)
-        return True, None
+                ping_results[addr] = False
+                logger.warning('Ping from %s to %s failed\n', self.device.name, addr)
+            else:
+                ping_results[addr] = True
+                logger.warning('Ping from %s to %s succeeded\n', self.device.name, addr)
+        return all([res for res in ping_results.values()]), ping_results
 
     def is_connected(self)-> bool:
         """
         Returns connection status.
         """
-        return self._shell.eof
+        return self._shell.closed is False
 
     def execute(self, command, **kwargs) -> str:
         """

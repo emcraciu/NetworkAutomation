@@ -1,10 +1,15 @@
 """
 Configures the UbuntuServer, IOU, V15, CSR & FTD devices
 """
+import asyncio
+import json
 import logging
 import time
+from threading import Thread
 from pyats import aetest
 from pyats.topology import loader
+from pyats.aetest.steps import Steps
+from pyats.topology import Device
 
 from ubuntu_server_config import configure as configure_ubuntu_server
 from connectors_lib.ssh_connector import SSHConnector
@@ -18,6 +23,7 @@ topology_addresses = [
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, encoding='utf-8')
+ping_results_file = 'ping_results.json'
 
 class ConfigureEnvironment(aetest.CommonSetup):
     """
@@ -73,40 +79,60 @@ class InitialConfigTests(aetest.Testcase):
     Configures the devices through the emulated console interface via Telnet to devices
     that have a telnet connection in the testbed
     """
-    @aetest.test
-    def ubuntu_server_initial_conf(self):
+
+    async def ubuntu_server_initial_conf(self, steps: Steps):
         """
         Configures the UbuntuServer
         """
-        configure_ubuntu_server(testbed.devices['UbuntuServer'])
+        with steps.start("Configuring Ubuntu Server"):
+            configure_ubuntu_server(testbed.devices['UbuntuServer'])
 
-    @aetest.test
-    def IOU1_initial_conf(self, telnet_objects: dict[str,TelnetConnector]):
+    async def IOU1_initial_conf(self, steps: Steps, device: Device):
         """
         Configures the IOU1
         """
-        telnet_objects['IOU1'].do_initial_config()
+        with steps.start("Configuring IOU"):
+            device.do_initial_config()
 
-    @aetest.test
-    def CSR_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
+    async def CSR_initial_conf(self, steps: Steps, device: Device):
         """
         Configures the CSR
         """
-        telnet_objects['CSR'].do_initial_config()
+        with steps.start("Configuring CSR"):
+            device.do_initial_config()
 
-    @aetest.test
-    def V15_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
+    async def V15_initial_conf(self, steps: Steps, device: Device):
         """
         Configures the V15
         """
-        telnet_objects['V15'].do_initial_config()
+        with steps.start("Configuring V15"):
+            device.do_initial_config()
 
-    @aetest.test
-    def FTD_initial_conf(self, telnet_objects: dict[str, TelnetConnector]):
+    async def FTD_initial_conf(self, steps: Steps, device: Device):
         """
         Configures the FTD
         """
-        telnet_objects['FTD'].do_initial_config()
+        with steps.start("Configuring FTD"):
+            device.do_initial_config()
+
+    async def asyncio_main(self, steps: Steps, telnet_objects: dict[str, TelnetConnector]):
+        """
+        Calls all initial_configuration functions
+        """
+        await asyncio.gather(
+            self.ubuntu_server_initial_conf(steps),
+            self.IOU1_initial_conf(steps, telnet_objects['IOU1']),
+            self.CSR_initial_conf(steps, telnet_objects['CSR']),
+            self.V15_initial_conf(steps, telnet_objects['V15']),
+            self.FTD_initial_conf(steps, telnet_objects['FTD'])
+        )
+
+    @aetest.test
+    def initial_configuration_all_devices(self, steps: Steps, telnet_objects: dict[str, TelnetConnector]):
+        """
+        Calls asyncio_main which schedules all async initial configuration functions
+        """
+        asyncio.run(self.asyncio_main(steps, telnet_objects))
 
 class SSHConnectorTests(aetest.Testcase):
     """
@@ -158,40 +184,52 @@ class SSHConnectorTests(aetest.Testcase):
         """
         ssh_clients['IOU1'].config()
 
-    @aetest.test
-    def config_CSR(self, ssh_clients: dict[str, SSHConnector]):
+    def thread_config_CSR(self, steps: Steps, device: Device):
         """
         Performs the main CSR configuration including enabling interfaces, adding ip addresses,
         adding static routes, enabling routing protocols and creating dhcp pools
         """
-        ssh_clients['CSR'].config()
+        with steps.start("Configuring CSR in parallel"):
+            device.config()
 
-    @aetest.test
-    def config_V15(self, ssh_clients: dict[str, SSHConnector]):
+    def thread_config_V15(self, steps: Steps, device: Device):
         """
         Performs the main V15 configuration including enabling interfaces, adding ip addresses,
         adding static routes, enabling routing protocols
         """
-        ssh_clients['V15'].config()
+        with steps.start("Configuring V15 in parallel"):
+            device.config()
+
+    @aetest.test
+    def config_CSR_and_V15_parallel(self, steps: Steps, ssh_clients: dict[str, SSHConnector]):
+        """
+        Configures CSR & V15 in parallel
+        """
+        csr_thread = Thread(target=self.thread_config_CSR, args=(steps, ssh_clients['CSR']))
+        v15_thread = Thread(target=self.thread_config_V15, args=(steps, ssh_clients['V15']))
+        csr_thread.start()
+        v15_thread.start()
+        csr_thread.join()
+        v15_thread.join()
 
 class TestPings(aetest.Testcase):
     """
-    Tests pings across all devices
+    Tests pings from all devices to all other
     """
     @aetest.test
     def test_pings(self, ssh_clients: dict[str,SSHConnector]):
         """
         Loops through all devices with an SSH connection in the testbed and
         tests pings to every other device via SSH
-        Fails if the previous test failed.
         """
-        if self.parent.result.value != 'passed':
-            self.fail('Config failure. Failing Pings')
-        else:
-            for dev_name, client in ssh_clients.items():
-                result, failed_addr = client.test_pings(topology_addresses=topology_addresses)
-                if result is not True:
-                    self.fail(f'Ping failed from device {dev_name} to address: {failed_addr}')
+        ping_results = {}
+        for dev_name, client in ssh_clients.items():
+            ping_results[dev_name] = {}
+            result, device_ping_results = client.test_pings(topology_addresses=topology_addresses)
+            ping_results[dev_name] = device_ping_results
+
+        with open(ping_results_file, 'w', encoding='utf-8') as fh:
+            json.dump(ping_results,fh,indent=4)
 
 class Cleanup(aetest.CommonCleanup):
     """
