@@ -1,16 +1,25 @@
+"""
+Contains OSPF configuration functions for a device
+"""
 from pyats import aetest
-from pyats.aetest.steps import Steps, Step
+from pyats.aetest.steps import Steps
 from pyats.topology import loader, Device
 from genie.libs.conf.ospf.ospf import Ospf
 from genie.libs.conf.interface.iosxe import Interface
 tb = loader.load('testbeds/OSPF.yaml')
 
-class Example(aetest.Testcase):
+class OSPF_config_test(aetest.Testcase):
+    """
+    Configures OSPF on a device
+    """
     def configure_ospf(self, steps: Steps, device_name: str, device: Device):
+        """
+        Configures ipv4 addresses on a device and enables OSPF on each interface
+        """
         with steps.start('Connect to device'):
             device.connect(log_stdout=True)
 
-        for interface_name, pyats_interface in device.interfaces.items():
+        for _, pyats_interface in device.interfaces.items():
             with steps.start(f'Creating Interface Object on {device_name}'):
                 interface = Interface(name='GigabitEthernet1')
                 interface.device = device
@@ -35,6 +44,9 @@ class Example(aetest.Testcase):
 
     @aetest.test
     def configure_ospf_devices(self, steps: Steps):
+        """
+        Loops through all devices in the testbed and enables ospf on them
+        """
         for device_name, device in tb.devices.items():
             self.configure_ospf(steps, device_name, device)
 

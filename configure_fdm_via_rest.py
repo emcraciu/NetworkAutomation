@@ -1,27 +1,32 @@
 """Added docstrings for module"""
-import asyncio
 import ssl
 import time
 
-from aiohttp.test_utils import unused_port
 from pyats import aetest
 from pyats.aetest.steps import Steps
 from pyats.topology import loader
 
-ssl._create_default_https_context = ssl._create_unverified_context
 from connectors_lib.swagger_connector import SwaggerConnector
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
 
 tb = loader.load('testbeds/config.yaml')
 device = tb.devices['FTD']
 
 
-class Example3(aetest.Testcase):
-
+class REST_config(aetest.Testcase):
+    """
+    Configures FTD via FDM Swagger client
+    """
     def create_security_zone(self, steps: Steps, swagger: SwaggerConnector):
+        """
+        Creates a security zone
+        """
         with steps.start('Creating Security Zone'):
             already_configured = False
-            securityZones = swagger.client.SecurityZone.getSecurityZoneList().result().items
-            for zone in securityZones:
+            security_zones = swagger.client.SecurityZone.getSecurityZoneList().result().items
+            for zone in security_zones:
                 for interface in zone.interfaces:
                     if interface.hardwareName == 'GigabitEthernet0/1':
                         already_configured = True
@@ -36,35 +41,52 @@ class Example3(aetest.Testcase):
                 sz = security_zone(
                     name='AutoCreated1',
                     mode='ROUTED',
-                    interfaces=[ref(id=phy.id, name=phy.name, hardwareName=phy.hardwareName, type=phy.type)]
+                    interfaces=[
+                        ref(
+                            id=phy.id,
+                            name=phy.name,
+                            hardwareName=phy.hardwareName,
+                            type=phy.type
+                        )
+                    ]
                 )
                 result = swagger.client.SecurityZone.addSecurityZone(body=sz).result()
                 print(result)
             else:
-                print("Interface GigabitEthernet0/1 is already included in a SecurityZone. Skipping creating a new one.")
+                print("Interface GigabitEthernet0/1 is already included in a SecurityZone."
+                      " Skipping creating a new one.")
 
     def configure_interfaces(self, steps: Steps, swagger: SwaggerConnector):
+        """
+        Configures ipv4 addresses on interfaces
+        """
         with steps.start("Configuring Interface"):
             existing_object = swagger.client.Interface.getPhysicalInterfaceList().result()['items']
             for obj in existing_object:
                 if obj.hardwareName == 'GigabitEthernet0/0':
-                    obj.ipv4.ipAddress.ipAddress = device.interfaces['GigabitEthernet0/0'].ipv4.ip.compressed
-                    obj.ipv4.ipAddress.netmask = device.interfaces['GigabitEthernet0/0'].ipv4.netmask.compressed
+                    interface_ip = device.interfaces['GigabitEthernet0/0'].ipv4.ip.compressed
+                    interface_mask = device.interfaces['GigabitEthernet0/0'].ipv4.netmask.compressed
+                    obj.ipv4.ipAddress.ipAddress = interface_ip
+                    obj.ipv4.ipAddress.netmask = interface_mask
                     obj.enabled = True
                     obj.ipv4.dhcp = False
                     obj.ipv4.ipType = 'STATIC'
                 elif obj.hardwareName == 'GigabitEthernet0/1':
-                    obj.ipv4.ipAddress.ipAddress = device.interfaces['GigabitEthernet0/1'].ipv4.ip.compressed
-                    obj.ipv4.ipAddress.netmask = device.interfaces['GigabitEthernet0/1'].ipv4.netmask.compressed
+                    interface_ip = device.interfaces['GigabitEthernet0/1'].ipv4.ip.compressed
+                    interface_mask = device.interfaces['GigabitEthernet0/1'].ipv4.netmask.compressed
+                    obj.ipv4.ipAddress.ipAddress = interface_ip
+                    obj.ipv4.ipAddress.netmask = interface_mask
                     obj.enabled = True
                     obj.ipv4.dhcp = False
                     obj.ipv4.ipType = 'STATIC'
                 else:
                     continue
-                result = swagger.client.Interface.editPhysicalInterface(objId=obj.id, body=obj).result()
-                print(result)
+                swagger.client.Interface.editPhysicalInterface(objId=obj.id, body=obj).result()
 
     def create_access_rules(self, steps: Steps, swagger: SwaggerConnector):
+        """
+        Creates an access rule to allow all traffic to security zone 0
+        """
         with steps.start('Creating Access Rule'):
             policy_list_id = swagger.client.AccessPolicy.getAccessPolicyList().result().items[0].id
             access_rules = swagger.client.AccessPolicy.getAccessRuleList(parentId=policy_list_id).result().items
@@ -82,6 +104,10 @@ class Example3(aetest.Testcase):
                 print("Access Rule: AcessRule10 already exists. Skipping.")
 
     def create_network_objects(self, steps: Steps, swagger: SwaggerConnector):
+        """
+        Creates the NETWORK network objects for networks towards UbuntuServer, DNS & DockerGuest1
+        Creates CSR, IOU, V15 HOST network objects
+        """
         with steps.start('Creating Network Objects needed for Static Route'):
             model = swagger.client.get_model('NetworkObject')
             network_objects = swagger.client.NetworkObject.getNetworkObjectList().result().items
@@ -138,10 +164,13 @@ class Example3(aetest.Testcase):
                 ).result()
 
     def create_static_routes(self, steps: Steps, swagger: SwaggerConnector):
+        """
+        Creates static route objects towards UbuntuServer, DNS, DockerGuest1 networks
+        """
         with steps.start('Configuring static route'):
             model = swagger.client.get_model('StaticRouteEntry')
             v_router = swagger.client.Routing.getVirtualRouterList().result()['items'][0]
-            routes = swagger.client.Routing.getStaticRouteEntryList(parentId=v_router.id).result()
+            # routes = swagger.client.Routing.getStaticRouteEntryList(parentId=v_router.id).result()
             ref = swagger.client.get_model('ReferenceModel')
             network_objects = swagger.client.NetworkObject.getNetworkObjectList().result().items
             interface_objects = swagger.client.Interface.getPhysicalInterfaceList().result()['items']
@@ -154,7 +183,7 @@ class Example3(aetest.Testcase):
             dns_server_network = next(filter(lambda o: o.name == 'DNSNetwork', network_objects))
             docker_guest1_network = next(filter(lambda o: o.name == 'DockerGuest1Network', network_objects))
 
-            interface_g00 = next(filter(lambda o: o.hardwareName == 'GigabitEthernet0/0', interface_objects))
+            # interface_g00 = next(filter(lambda o: o.hardwareName == 'GigabitEthernet0/0', interface_objects))
             interface_g01 = next(filter(lambda o: o.hardwareName == 'GigabitEthernet0/1', interface_objects))
 
             # to 192.168.11.0/24 via CSR
@@ -237,7 +266,10 @@ class Example3(aetest.Testcase):
             )
 
     @aetest.test
-    def configure_fdm_interface(self, steps: Steps):
+    def configure_fdm(self, steps: Steps):
+        """
+        Connects to FDM via REST & performs all configurations
+        """
         with steps.start('Connecting to FDM'):
             swagger: SwaggerConnector = device.connections.rest['class'](device)
             swagger.connect(connection=device.connections.rest)
@@ -256,9 +288,6 @@ class Example3(aetest.Testcase):
         self.configure_interfaces(steps, swagger)
         self.create_network_objects(steps, swagger)
         self.create_static_routes(steps, swagger)
-
-        with steps.start('Create network object'):
-            network_object = swagger.client.get_model('NetworkObject')
 
         with steps.start('Deploying configuration'):
             response = swagger.client.Deployment.addDeployment().result()

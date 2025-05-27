@@ -1,18 +1,21 @@
+"""
+Manages SSH connection
+"""
 import ipaddress
 import time
-from typing import Optional
 import logging
 import re
 from paramiko import SSHClient
 from paramiko.client import AutoAddPolicy
 from pyats.topology import Device
-from pyats.utils.secret_strings import SecretString
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class SSHConnector:
-
+    """
+    Manages SSH connection
+    """
     def __init__(self, device: Device):
         self.device = device
         self.hostname = None
@@ -24,6 +27,12 @@ class SSHConnector:
         self._shell = None
 
     def connect(self, **kwargs):
+        """
+        Connects to device
+        Args:
+            kwargs:
+                connection(pyats.Connection): testbed connection object used
+        """
         conn_details = kwargs['connection']
         self.username = conn_details.credentials.login.username
         self.password = conn_details.credentials.login.password.plaintext
@@ -33,12 +42,19 @@ class SSHConnector:
         self._shell = self._client.invoke_shell()
 
     def enable_rest(self):
+        """
+        Enables REST server on the device
+        """
         self.execute('en', prompt=[r'\w+#', r'\(config\)#'])
         self.execute('conf t', prompt=[r'\(config\)#'])
         self.execute('ip http secure-server ', prompt=[r'\(config\)#'])
         self.execute('restconf', prompt=[r'\(config\)#'])
 
     def move_to_global_conf(self):
+        """
+        Expects device to be in user exec or privileged exec.
+        Moves to global configuration mode.
+        """
         self.execute('en', prompt=[r'\w+#', r'\(config\)#'])
         self.execute('conf t', prompt=[r'\(config\)#'])
         hostname = self.device.custom.hostname
@@ -46,9 +62,10 @@ class SSHConnector:
 
     def configure_interfaces(self):
         """
-        Expects global config
+        Expects device to be in global configuration.
+        Adds ipv4 addresses to interfaces statically or via dhcp based on testbed values.
         """
-        for iname, interface in self.device.interfaces.items():
+        for _, interface in self.device.interfaces.items():
             self.execute(f'interface {interface.name}', prompt=[r'\(config-if\)#'])
 
             if interface.ipv4:
@@ -57,28 +74,37 @@ class SSHConnector:
                 self.execute(f'ip add {ip} {mask}', prompt=[r'\(config-if\)#'])
             else:
                 self.execute('ip add dhcp', prompt=[r'\(config-if\)#'])
-            self.execute(f'no sh', prompt=[r'\(config-if\)#'])
+            self.execute('no sh', prompt=[r'\(config-if\)#'])
             self.execute('exit', prompt=[r'\(config\)#'])
 
     def configure_routes(self):
+        """
+        Configures static routes based on testbed values.
+        """
         if self.device.custom.get('routes'):
-            for r_name, route in self.device.custom['routes'].items():
+            for _, route in self.device.custom['routes'].items():
                 to_ip = ipaddress.IPv4Network(route['to_ip'])
                 self.execute(f'ip route {to_ip.network_address} {to_ip.netmask.exploded} {route['via']}',
                              prompt=[r'\(config\)#'])
 
     def configure_rip(self):
+        """
+        Configures RIP routing based on testbed values.
+        """
         if self.device.type == 'router' and self.device.custom.get('rip'):
             rip_dict = self.device.custom['rip']
             self.execute('router rip', prompt=[r'\(config-router\)#'])
             self.execute('version 2', prompt=[r'\(config-router\)#'])
             self.execute('no auto-summary', prompt=[r'\(config-router\)#'])
-            networks = list(map(lambda str_addr: ipaddress.IPv4Network(str_addr), rip_dict.get('networks')))
+            networks = [ipaddress.IPv4Network(str_addr) for str_addr in  rip_dict.get('networks')]
             for network in networks:
                 self.execute(f'network {network.network_address}', prompt=[r'\(config-router\)#'])
             self.execute('exit', prompt=[r'\(config\)#'])
 
     def configure_dhcp_pools(self):
+        """
+        Configures DHCP pools based on testbed values.
+        """
         if self.device.custom.get('dhcp_pools'):
             for pool_name, pool in self.device.custom['dhcp_pools'].items():
                 self.execute(f'ip dhcp pool {pool_name}', prompt=[r'\(dhcp-config\)#'])
@@ -86,9 +112,9 @@ class SSHConnector:
                 self.execute(f'network {network_ip.network_address.compressed} {network_ip.netmask.exploded}',
                              prompt=[r'\(dhcp-config\)#'])
                 self.execute(f'default-router {pool['default_router']}', prompt=[r'\(dhcp-config\)#'])
-                if (pool.get('domain_name')):
+                if pool.get('domain_name'):
                     self.execute(f'domain-name {pool['domain_name']}', prompt=[r'\(dhcp-config\)#'])
-                if (pool.get('dns_server')):
+                if pool.get('dns_server'):
                     self.execute(f'dns-server {pool['dns_server']}', prompt=[r'\(dhcp-config\)#'])
                 self.execute('exit', prompt=[r'\(config\)#'])
                 if pool.get('excluded_address_ranges'):
@@ -97,6 +123,9 @@ class SSHConnector:
                         self.execute(f'ip dhcp excluded-address {start} {end}', prompt=[r'\(config\)#'])
 
     def save_config(self):
+        """
+        Writes to startup configuration file.
+        """
         self.execute('end', prompt=[r'\w+#'])
         out = self.execute('write', prompt=[], timeout=5)
         if 'Continue? [no]:' in out or '[confirm]' in out:
@@ -104,7 +133,10 @@ class SSHConnector:
         self.execute('', prompt=[r'\w+#'])
 
     def config(self):
-        if self.device.os == 'ios' or self.device.os == 'iosxe':
+        """
+        Initiates the specific configuration based on device type
+        """
+        if self.device.os in ('ios','iosxe'):
             self.execute('\r', prompt=[])
             self.move_to_global_conf()
             self.configure_interfaces()
@@ -117,11 +149,18 @@ class SSHConnector:
             self.save_config()
 
     def read(self) -> str:
+        """
+        Reads values from connection.
+        Returns the output.
+        """
         if self._shell.recv_ready():
             return str(self._shell.recv(999999999))
         return ''
 
     def test_pings(self, topology_addresses: list[str]):
+        """
+        Performs pings to all addresses in topology_addresses.
+        """
         pattern = r'Success rate is (\d{1,3}) percent'
         self.execute('\r', prompt=[r'\w+#'])
         for addr in topology_addresses:
@@ -137,36 +176,21 @@ class SSHConnector:
                 match = re.search(pattern, out)
                 if not match:
                     continue
-                else:
-                    matched_regex = True
-                    percentage = int(match.group(1))
-                    break
+                matched_regex = True
+                percentage = int(match.group(1))
+                break
             if not matched_regex:
-                raise Exception('Regex was not matched at ping')
+                raise RuntimeError('Regex was not matched at ping')
             if percentage == 0:
-               return False, addr
-            else:
-                logger.warning(f'Ping from {self.device} to {addr} succeeded\n')
+                return False, addr
+            logger.warning('Ping from %s to %s succeeded\n', self.device, addr)
         return True, None
 
-
-    def get_device_details(self, *args, **kwargs):
-        out = ''
-        if self.device.os in ['ubuntu']:
-            out = self.execute('ip addr show', prompt=[r'.*'])
-        elif self.device.os in ['ios', 'iosxe']:
-            out = self.execute('show version', prompt=[r'System image file is'])
-        logger.warning(out)
-
-    def do_initial_configuration(self):
-        pass
-
-    def is_connected(self):
-        try:
-            self._client.exec_command('\n', timeout=5)
-            return True
-        except:
-            return False
+    def is_connected(self)-> bool:
+        """
+        Returns connection status.
+        """
+        return self._shell.eof
 
     def execute(self, command, **kwargs) -> str:
         """
@@ -179,10 +203,13 @@ class SSHConnector:
             time.sleep(kwargs['timeout'])
         out = self._shell.recv(999999999)
 
-        exists_match = any(re.search(p, out) != None for p in prompt)
+        exists_match = any(re.search(p, out) is not None for p in prompt)
         if exists_match or len(prompt) == 0:
             return out.decode()
-        raise Exception(f"Prompts: {prompt} were not matched in {out.decode()}")
+        raise RuntimeError(f"Prompts: {prompt} were not matched in {out.decode()}")
 
     def disconnect(self):
+        """
+        Terminates the connection.
+        """
         self._client.close()

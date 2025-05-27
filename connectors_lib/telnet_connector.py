@@ -1,4 +1,8 @@
+"""
+Manages Telnet a connection
+"""
 import logging
+# pylint: disable=deprecated-module
 import telnetlib
 import time
 import re
@@ -12,23 +16,35 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 class TelnetConnector:
-    def __init__(self, device: Device, **kwargs):
+    """
+    Manages a telnet connection
+    """
+    def __init__(self, device: Device):
         self.device = device
         self._conn: Optional[telnetlib.Telnet] = None
         self.connection: Optional[AttrDict] = None
 
     def connect(self, **kwargs):
+        """
+        Connects to the device based on the connection object passed.
+        Arguments:
+            kwargs:
+                connection(pyats.Connection)
+        """
         self.connection = kwargs['connection']
         self._conn = telnetlib.Telnet(
             host=self.connection.ip.compressed,
             port=self.connection.port,
         )
 
-    # @return str
     def read(self) -> str:
+        """
+        Performs a read_very_eager
+        Return:
+            The output of th read
+        """
         return self._conn.read_very_eager().decode()
 
-    # modificat aici
     def contains(self, pattern: list[str]) -> bool:
         """
         Returns true if any of the strings in pattern are present.
@@ -39,9 +55,15 @@ class TelnetConnector:
         return False
 
     def disconnect(self):
+        """
+        Closes the connection.
+        """
         self._conn.close()
 
     def write(self, command: str) -> None:
+        """
+        Sends a command to the device.
+        """
         self._conn.write(command.encode()+b'\n')
 
     def write_raw(self, command: str) -> str:
@@ -52,36 +74,59 @@ class TelnetConnector:
         out = self._conn.read_very_eager().decode()
         return out
 
-    def execute(self, command,**kwargs):
+    def execute(self, command: str,**kwargs):
+        """
+        Executes the command and waits until the output matches at least one given regex.
+        A \n character is added to the end of the command string.
+            Args:
+                command(str): The command to execute.
+                kwargs:
+                    prompt(List[str]): A list of the regex expressions to be tested against the output of the command
+            Raises:
+                RuntimeError: If the telnet connection is closed.
+            Returns:
+                The output of the command until (including) the regex match
+        """
         if not self._conn:
             logger.error('Connection object changed to none before execute statement')
             raise RuntimeError('Connection object changed to none before execute statement')
-            return
         prompt: list[bytes] = list(map(lambda s: s.encode(), kwargs['prompt']))
         self._conn.write(f'{command}\n'.encode())
         if kwargs.get('timeout'):
             time.sleep(kwargs['timeout'])
         response = self._conn.expect(prompt)
-        if type(response) == tuple:
+        if isinstance(response, tuple):
             return response[2].decode('utf8')
         return response
 
     def try_write_enable_pass(self, last_out: str):
+        """
+        Writes the enable password if the prompt matches. Otherwise, does nothing.
+            Args:
+                last_out(str): The last output on the console
+        """
         if 'Password:' in last_out:
-            # logger.warning("HERE DJ")
-            self.execute(self.device.credentials.default.enable_password.plaintext + '\r',prompt=[r'\(config\)#', r'\w+#', r'\w+\>'])
+            self.execute(self.device.credentials.default.enable_password.plaintext
+                         + '\r',prompt=[r'\(config\)#', r'\w+#', r'\w+\>'])
 
     def try_skip_initial_config_dialog(self, last_out: str):
+        """
+        Checks if autoconfiguration is in progress and cancels if so
+            Args:
+                last_out(str): The last output on the console
+        """
         if 'initial configuration dialog?' in last_out:
             self.execute('no', prompt=[r'terminate autoinstall\? \[yes\]:'])
-            # logger.info('1 is one')
             self.execute('yes\r', prompt=[r'successfully'])
-            # logger.info('4 is one')
             self.write('\r')
             self.execute('', prompt=[r'\w+\>'])
 
     def _initial_config_ftd(self):
-        username = self.device.credentials.login.username
+        """
+        Goes through the initial setup wizard
+        If the default credentials of admin/Admin123 don't match, does nothing
+        """
+        # username = self.device.credentials.login.username
         password = self.device.credentials.login.password.plaintext
         management_ip = self.device.interfaces['management'].ipv4.ip.compressed
         management_ip_mask = self.device.interfaces['management'].ipv4.network.netmask.exploded
@@ -154,25 +199,12 @@ class TelnetConnector:
             logger.error("Device is already configured. Default password and username did not work.")
         else:
             return
-        #     self.execute('configure manager delete',prompt=[r'Do you want to continue\[yes\/no\]\:'])
-        #     self.execute('yes', prompt=[r'\> '])
-        #     self.execute('reboot', prompt=[r"Please enter \'YES\' or \'NO\'\:"])
-        #     self.write('YES')
-        #     for i in range(5):
-        #         out = self.read()
-        #         if 'FTD login:' in out:
-        #             break
-        #     else:
-        #         raise RuntimeError('FTD did not finish reboot')
-        #     self.execute('configure fierewall routed', prompt=[r'\> '])
-        # TODO:
-            """
-            configure network management-data-interface 
-            > Unable to access DetectionEngine::bulkLoad
-            """
-            # self.execute(f'configure network ipv4 manual {management_ip} {management_ip_mask} {management_gateway}', prompt=[r'\> '])
 
     def move_to_global_config(self):
+        """
+        Expects the connection to be in privileged exec
+        Moves to global config by writing the enable password if necessary
+        """
         self.write('\r')
         time.sleep(2)
         out = self.read()
@@ -184,6 +216,10 @@ class TelnetConnector:
         self.execute('conf t', prompt=[r'\(config\)#'])
 
     def configure_ssh(self):
+        """
+        Configures ssh version 2
+        Sets the domain name to cisco.com
+        """
         # ssh
         self.execute('ip ssh version 2', prompt=[r'\(config\)#'])
         username = self.device.connections.ssh.credentials.login.username
@@ -201,9 +237,16 @@ class TelnetConnector:
         self.execute('exit', prompt=[r'\(config\)#'])
 
     def configure_scp_server(self):
+        """
+        Configures scp server.
+        Used for fetching the startup configuration
+        """
         self.execute('ip scp server enable', prompt=[r'\(config\)#'])
 
     def configure_initial_interface(self):
+        """
+        Adds an ip address to the interface with the 'initial' alias
+        """
         interface = self.device.interfaces['initial']
         self.execute(f'interface {interface.name}', prompt=[r'\(config-if\)#'])
         ip = interface.ipv4.ip.compressed
@@ -213,11 +256,17 @@ class TelnetConnector:
         self.execute('exit', prompt=[r'\(config\)#'])
 
     def enable_rest(self):
+        """
+        Enables a rest server
+        """
         self.execute('conf t', prompt=[r'\(config\)#'])
         self.execute("ip http secure-server", prompt=[r'\(config\)#'])
         self.execute('restconf', prompt=[r'\(config\)#'])
 
     def save_config(self):
+        """
+        Saves the running configuration to startup configuration file
+        """
         self.execute('end', prompt=[r'\w+#'])
         self.write('write')
         if self.contains(['Continue? [no]:', '[confirm]']):
@@ -225,7 +274,10 @@ class TelnetConnector:
         self.execute('', prompt=[r'\w+#'])
 
     def do_initial_config(self):
-        if self.device.os == 'ios' or self.device.os == 'iosxe':
+        """
+        Performs the initial configuration on the emulated console interface
+        """
+        if self.device.os in ('ios', 'iosxe'):
             self.move_to_global_config()
             self.configure_initial_interface()
             self.configure_ssh()
@@ -234,10 +286,16 @@ class TelnetConnector:
             # enable secret
             if self.device.platform == 'iou':
                 # logger.warning(f'En pass : {self.device.credentials.default.enable_password.plaintext}')
-                self.execute(f'enable secret {self.device.credentials.default.enable_password.plaintext}', prompt=[r'\(config\)#'])
+                self.execute(
+                    f'enable secret {self.device.credentials.default.enable_password.plaintext}',
+                             prompt=[r'\(config\)#']
+                )
             self.save_config()
         elif self.device.os == 'ftd':
             self._initial_config_ftd()
 
-    def is_connected(self):
+    def is_connected(self)-> bool:
+        """
+        Returns the current status of the telnet connection
+        """
         return not self._conn.eof
