@@ -1,17 +1,14 @@
 """
 Magic Mock testing
 """
-import time
 # pylint: disable=import-outside-toplevel
 # pylint: disable=attribute-defined-outside-init
+# pylint: disable=unused-argument
+# pylint: disable=protected-access
 
 import unittest
+from ipaddress import IPv4Interface
 from unittest.mock import MagicMock, patch
-
-from genie.conf.base.sprinkler import IPv4Interface
-
-from pyats_env_config import topology_addresses
-
 
 # from pyats.datastructures import AttrDict
 def get_mocked_ssh_connection_object():
@@ -31,13 +28,13 @@ def get_mocked_IOU_device():
     """
     Returns a mock IOU device
     """
-    device = MagicMock()
-    device.os = "ios"
-    device.name = "IOU"
-    device.type = "router"
-    return device
+    dev = MagicMock()
+    dev.os = "ios"
+    dev.name = "IOU"
+    dev.type = "router"
+    return dev
 
-def get_mocked_SSHConnector(device):
+def get_mocked_SSHConnector(dev):
     """
     Returns an SSHConnector created with a mock device
     and a mock shell.
@@ -53,7 +50,7 @@ def get_mocked_SSHConnector(device):
     ssh_client.invoke_shell.return_value = shell
 
     from connectors_lib.ssh_connector import SSHConnector
-    connector = SSHConnector(device)
+    connector = SSHConnector(dev)
     connector._client = ssh_client
 
     return connector, ssh_client, shell
@@ -133,13 +130,12 @@ class TestConnector(unittest.TestCase):
             nonlocal addr_idx
             if addr_idx == 2:
                 return "Success rate is 0 percent"
-            else:
-                addr_idx += 1
-                return "Success rate is 100 percent"
+            addr_idx += 1
+            return "Success rate is 100 percent"
         def execute(command: str, **kwargs):
             return ""
         all_worked, ping_results = test_pings(topology_addresses,execute, read, device_name, os='ios')
-        assert all_worked == False
+        assert all_worked is False
         assert ping_results == {
             '10.10.10.10': True,
             '20.20.20.20': True,
@@ -152,7 +148,7 @@ class TestConnector(unittest.TestCase):
         from ubuntu_server_ping_all import ping_all
         topology_addresses=['10.10.10.10', '20.20.20.20', '127.0.0.1']
         all_worked, ping_results = ping_all(topology_addresses=topology_addresses)
-        assert all_worked == False
+        assert all_worked is False
         assert ping_results == {
             '10.10.10.10': False,
             '20.20.20.20': False,

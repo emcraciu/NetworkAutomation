@@ -103,6 +103,25 @@ class SSHConnector:
             networks = [ipaddress.IPv4Network(str_addr) for str_addr in  rip_dict.get('networks')]
             for network in networks:
                 self.execute(f'network {network.network_address}', prompt=[r'\(config-router\)#'])
+            if rip_dict.get('passive-interfaces'):
+                for passive_interface in rip_dict.get('passive-interfaces'):
+                    self.execute(f'passive-interface {passive_interface}', prompt=[r'\(config-router\)#'])
+            self.execute('exit', prompt=[r'\(config\)#'])
+
+    def configure_ospf(self):
+        """
+        Configures OSPF routing based on testbed values.
+        """
+        if self.device.type == 'router' and self.device.custom.get('ospf'):
+            ospf_dict = self.device.custom['ospf']
+            ospf_process_id = ospf_dict.get('process_id')
+            self.execute(f"router ospf {ospf_process_id}", prompt=[r'\(config-router\)#'])
+            for network in ospf_dict.get('networks').values():
+                self.execute(f'network {network['address']} {network['wildcard']} area {network['area']}',
+                             prompt=[r'\(config-router\)#'])
+            if ospf_dict.get('passive-interfaces'):
+                for passive_interface in ospf_dict.get('passive-interfaces'):
+                    self.execute(f'passive-interface {passive_interface}', prompt=[r'\(config-router\)#'])
             self.execute('exit', prompt=[r'\(config\)#'])
 
     def configure_dhcp_pools(self):
@@ -146,6 +165,7 @@ class SSHConnector:
             self.configure_interfaces()
             self.configure_routes()
             self.configure_rip()
+            self.configure_ospf()
             self.configure_dhcp_pools()
             # REST enable
             if self.device.name == 'CSR':

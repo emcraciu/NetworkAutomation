@@ -15,6 +15,7 @@ from ubuntu_server_config import configure as configure_ubuntu_server
 from ubuntu_server_ping_all import ping_all
 from connectors_lib.ssh_connector import SSHConnector
 from connectors_lib.telnet_connector import TelnetConnector
+from configure_fdm_via_rest import configure_fdm
 
 testbed = loader.load('testbeds/config.yaml')
 topology_addresses = [
@@ -24,7 +25,7 @@ topology_addresses = [
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, encoding='utf-8')
-ping_results_file = 'ping_results.json'
+PING_RESULTS_FILE = 'ping_results.json'
 
 class ConfigureEnvironment(aetest.CommonSetup):
     """
@@ -92,28 +93,28 @@ class InitialConfigTests(aetest.Testcase):
         """
         Configures the IOU1
         """
-        with steps.start("Configuring IOU"):
+        with steps.start("Performing IOU Initial Configuration"):
             device.do_initial_config()
 
     async def CSR_initial_conf(self, steps: Steps, device: Device):
         """
         Configures the CSR
         """
-        with steps.start("Configuring CSR"):
+        with steps.start("Performing CSR Initial Configuration"):
             device.do_initial_config()
 
     async def V15_initial_conf(self, steps: Steps, device: Device):
         """
         Configures the V15
         """
-        with steps.start("Configuring V15"):
+        with steps.start("Performing V15 Initial Configuration"):
             device.do_initial_config()
 
     async def FTD_initial_conf(self, steps: Steps, device: Device):
         """
         Configures the FTD
         """
-        with steps.start("Configuring FTD"):
+        with steps.start("Performing FTD Initial Configuration"):
             device.do_initial_config()
 
     async def asyncio_main(self, steps: Steps, telnet_objects: dict[str, TelnetConnector]):
@@ -190,7 +191,7 @@ class SSHConnectorTests(aetest.Testcase):
         Performs the main CSR configuration including enabling interfaces, adding ip addresses,
         adding static routes, enabling routing protocols and creating dhcp pools
         """
-        with steps.start("Configuring CSR in parallel"):
+        with steps.start("Configuring CSR in parallel with V15"):
             device.config()
 
     def thread_config_V15(self, steps: Steps, device: Device):
@@ -198,7 +199,7 @@ class SSHConnectorTests(aetest.Testcase):
         Performs the main V15 configuration including enabling interfaces, adding ip addresses,
         adding static routes, enabling routing protocols
         """
-        with steps.start("Configuring V15 in parallel"):
+        with steps.start("Configuring V15 in parallel with CSR"):
             device.config()
 
     @aetest.test
@@ -212,6 +213,13 @@ class SSHConnectorTests(aetest.Testcase):
         v15_thread.start()
         csr_thread.join()
         v15_thread.join()
+
+    @aetest.test
+    def configure_FTD_swagger(self, steps: Steps):
+        """
+        Configures FTD via FDM and swagger client
+        """
+        configure_fdm(steps)
 
 class TestPings(aetest.Testcase):
     """
@@ -230,7 +238,7 @@ class TestPings(aetest.Testcase):
             ping_results[dev_name] = device_ping_results
         _, ubuntu_server_ping_results = ping_all()
         ping_results['UbuntuServer'] = ubuntu_server_ping_results
-        with open(ping_results_file, 'w', encoding='utf-8') as fh:
+        with open(PING_RESULTS_FILE, 'w', encoding='utf-8') as fh:
             json.dump(ping_results,fh,indent=4)
 
 class Cleanup(aetest.CommonCleanup):

@@ -16,7 +16,35 @@ devices:
           - 192.168.102.0/24
           - 192.168.103.0/24
           - 192.168.104.0/24
+        passive-interfaces:
+          - Ethernet0/0
 
+      ospf:
+        process_id: 1
+        networks:
+          ubuntu_server:
+            address: 192.168.11.0
+            wildcard: 0.0.0.255
+            area: 0
+          IOU-CSR:
+            address: 192.168.101.0
+            wildcard: 0.0.0.255
+            area: 0
+          IOU-V15:
+            address: 192.168.102.0
+            wildcard: 0.0.0.255
+            area: 0
+          IOU-FTD:
+            address: 192.168.103.0
+            wildcard: 0.0.0.255
+            area: 0
+          IOU-alone:
+            address: 192.168.104.0
+            wildcard: 0.0.0.255
+            area: 0
+        passive-interfaces:
+          - Ethernet0/0
+          - Ethernet1/0
       dhcp_pools:
         guests:
           network: 192.168.103.0/24
@@ -74,6 +102,28 @@ devices:
           - 192.168.101.0/24
           - 50.50.50.0/24
           - 40.40.40.0/24
+        passive-interfaces:
+          - GigabitEthernet2
+
+      ospf:
+        process_id: 1
+        networks:
+          IOU-CSR:
+            address: 192.168.101.0
+            wildcard: 0.0.0.255
+            area: 0
+          UbuntuDockerGuest1:
+            address: 50.50.50.0
+            wildcard: 0.0.0.255
+            area: 0
+          CSR-FTD:
+            address: 40.40.40.0
+            wildcard: 0.0.0.255
+            area: 0
+        passive-interfaces:
+          - GigabitEthernet2
+          - GigabitEthernet3
+
       routes:
         to_docker_guest2:
           to_ip: 30.30.30.0/24
@@ -115,6 +165,26 @@ devices:
           - 192.168.102.0/24
           - 10.10.10.0/24
           - 20.20.20.0/24
+        passive-interfaces:
+          - GigabitEthernet0/2
+      ospf:
+        process_id: 1
+        networks:
+          DNS1:
+            address: 20.20.20.0
+            wildcard: 0.0.0.255
+            area: 0
+          V15-FTD:
+            address: 10.10.10.0
+            wildcard: 0.0.0.255
+            area: 0
+          IOU-V15:
+            address: 192.168.102.0
+            wildcard: 0.0.0.255
+            area: 0
+        passive-interfaces:
+          - GigabitEthernet0/2
+
       routes:
         to_docker_guest2:
           to_ip: 30.30.30.0/24
@@ -369,15 +439,18 @@ topology:
       eth0:
         type: ethernet
         link: "V15-DNS-1"
+        ipv4: 20.20.20.254
 
   UbuntuGuest1:
     interfaces:
       eth0:
         type: ethernet
         link: "CSR-GUEST1"
+        ipv4: 50.50.50.2/24
 
   UbuntuGuest2:
     interfaces:
       eth0:
         type: ethernet
         link: "FTD-GUEST2"
+        ipv4: 30.30.30.254/24
