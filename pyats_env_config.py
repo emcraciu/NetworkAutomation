@@ -12,6 +12,7 @@ from pyats.aetest.steps import Steps
 from pyats.topology import Device
 
 from ubuntu_server_config import configure as configure_ubuntu_server
+from ubuntu_server_ping_all import ping_all
 from connectors_lib.ssh_connector import SSHConnector
 from connectors_lib.telnet_connector import TelnetConnector
 
@@ -225,9 +226,10 @@ class TestPings(aetest.Testcase):
         ping_results = {}
         for dev_name, client in ssh_clients.items():
             ping_results[dev_name] = {}
-            result, device_ping_results = client.test_pings(topology_addresses=topology_addresses)
+            _, device_ping_results = client.test_pings(topology_addresses=topology_addresses)
             ping_results[dev_name] = device_ping_results
-        # TODO: Add ubuntu_server_ping_all.py here
+        _, ubuntu_server_ping_results = ping_all()
+        ping_results['UbuntuServer'] = ubuntu_server_ping_results
         with open(ping_results_file, 'w', encoding='utf-8') as fh:
             json.dump(ping_results,fh,indent=4)
 

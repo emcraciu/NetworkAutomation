@@ -173,7 +173,8 @@ class SSHConnector:
             topology_addresses,
             execute=self.execute,
             read=self.read,
-            device_name=self.device.name
+            device_name=self.device.name,
+            os=self.device.os,
         )
 
     def is_connected(self)-> bool:
@@ -184,7 +185,16 @@ class SSHConnector:
 
     def execute(self, command, **kwargs) -> str:
         """
-        If length of prompt is 0, does not check for pattern
+        Executes the command, then waits until the output matches at least one
+        regex pattern from a list.
+        If length of prompt is 0, does not check for pattern.
+        Returns
+            The output of the command until the matched part(inclusive)
+        Args:
+            kwargs
+                prompt(List[str]): the list of regex patterns to try match
+                timeout(int): Amount of time in seconds to wait after issuing the command.
+                The output is read after the timeout. (0 by default)
         """
         prompt: list[bytes] = list(map(lambda s: s.encode(), kwargs['prompt']))
         self._shell.send(f'{command}\n')
