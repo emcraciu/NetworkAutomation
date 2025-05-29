@@ -5,21 +5,14 @@
       <paths name="osboxes@92.83.42.103:1008 password">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/pycharm_project_462" local="$PROJECT_DIR$" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="osboxes@92.83.42.103:1008 password (2)">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/tmp/pycharm_project_71" local="$PROJECT_DIR$" />
+            <mapping deploy="/tmp/pycharm_project_985" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
       <paths name="osboxes@92.83.42.103:1008 password (3)">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

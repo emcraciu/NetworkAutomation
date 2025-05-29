@@ -3,39 +3,62 @@ testbed:
 
 devices:
   IOU1:
-    os: ios
+    os: iosv
+    platform: iou
     type: router
     custom:
       hostname: em-r1
+    credentials:
+      default:
+        username: admin
+        password: Cisco!23
+      enable:
+        password: Cisco!2345
     connections:
-      telnet:
-        class: telnet_connector.TelnetConnector
-        protocol: telnet
-        ip: 192.168.0.100
-        port: 5105 # replaces with yours
-      ssh:
-        class: ssh_connector.SSHConnector
+      cli_ssh:
         protocol: ssh
         ip: 192.168.11.1
         port: 22
-        credentials:
-          login:
-            username: admin
-            password: Cisco!23
+        username: admin
+        password: admin
+      cli_telnet:
+        protocol: telnet
+        ip: 192.168.11.1
+        port: 5105
+        username: admin
+        password: admin
+#      napalm:
+#        class: napalm
+#        protocol: napalm
+#        ip: 192.168.11.1
+#        port: 22
+#        credentials:
+#          login:
+#            username: admin
+#            password: Cisco!23
 
-  Router:
+  CSR:
     os: iosxe
     type: router
     custom:
       hostname: em-r2
+    credentials:
+      enable:
+        password: Cisco!2345
     connections:
+      rest:
+        protocol: https
+        port: 443
+        ip: 192.168.102.2
+        credentials:
+          login:
+            username: admin
+            password: Cisco!23
       telnet:
-        class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5023 # replaces with yours
+        port: 5095 # replaces with yours
       ssh:
-        class: ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.102.2
         port: 22
@@ -44,17 +67,19 @@ devices:
             username: admin
             password: Cisco!23
 
-  CiscoIOSv15:
-    os: iosv
+  IOSv:
+    os: ios
     type: router
     custom:
       hostname: IOSv15
+    credentials:
+      enable:
+        password: Cisco!2345
     connections:
       telnet:
-        class: telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5019 # replaces with yours
+        port: 5078 # replaces with yours
       ssh:
         protocol: ssh
         ip: 192.168.103.2 #ip IOU1
@@ -64,62 +89,41 @@ devices:
             username: admin
             password: Cisco!23
 
-  CiscoFTD:
+  FTD:
     os: ftd
     type: ftd
     custom:
       hostname: FTD
+      dns: 192.168.106.2
+    credentials:
+      login:
+        password: Cisco!2345
     connections:
+      telnet:
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5088
+        credentials:
+          login:
+            username: admin
+            password: Admin123
       ssh:
         protocol: ssh
-        ip: 192.168.45.45 # replaces with yours
-        port: 5021 # replaces with yours
-
-  DNS-1:
-    os: linux
-    type: server
-    custom:
-      hostname: DNS-1
-    connections:
-      ssh:
-        protocol: ssh
+        ip: 192.168.103.2
         port: 22
-        ipv4: 192.168.100.1 # to be changed
-
-  UbuntuServer:
-    os: linux
-    type: server
-    custom:
-      hostname: UbuntuServer
-    connections:
-      vnc:
-        protocol: vnc
-        ip: 192.168.11.21
-        port: 5904 # replaces with yours
-
-  UbuntuDockerGuest-1:
-    os: linux
-    type: server
-    custom:
-      hostname: UbuntuDockerGuest-1
-    connections:
-      telnet:
-        class: telnet_connector.TelnetConnector
-        protocol: telnet
-        ip: 192.168.0.100
-        port: 5043 # replaces with yours
-
-  UbuntuDockerGuest-2:
-    os: linux
-    type: server
-    custom:
-      hostname: UbuntuDockerGuest-2
-    connections:
-      telnet:
-        class: telnet_connector.TelnetConnector
-        protocol: telnet
-        ip: 192.168.0.100
-        port: 5023 # replaces with yours
+        credentials:
+          login:
+            username: admin
+            password: Cisco@135
+      rest:
+#        class: connectors.swagger_connector.SwaggerConnector
+        protocol: https
+        ip: 192.168.110.2
+        port: 443
+        credentials:
+          login:
+            username: admin
+            password: Cisco@135
 
 topology:
   IOU1:
@@ -131,20 +135,25 @@ topology:
         ipv4: 192.168.11.1/24
       Ethernet0/1:
         type: ethernet
-        link: docker
+        alias: to_csr
+        link: csr
         ipv4: 192.168.101.1/24
       Ethernet0/2:
         type: ethernet
-        link: csr
+        link: iosv
         ipv4: 192.168.102.1/24
+      Ethernet0/3:
+        type: ethernet
+        link: ftd_mgmt
+        ipv4: 192.168.110.1/24
 
-  Router:
+  CSR:
     interfaces:
       GigabitEthernet1:
         alias: initial
         type: ethernet
-        link: csr
-        ipv4: 192.168.102.2/24
+        link: to_IOU1
+        ipv4: 192.168.101.2/24
       GigabitEthernet2:
         type: ethernet
         alias: to_DockerGuest1
@@ -156,13 +165,13 @@ topology:
         link: link-ftd3
         ipv4: 192.168.106.1/24
 
-  CiscoIOSv15:
+  IOSv:
     interfaces:
       GigabitEthernet0/0:
         type: ethernet
         alias: initial
         link: link-ios15
-        ipv4: 192.168.103.2/24
+        ipv4: 192.168.102.2/24
       GigabitEthernet0/1:
         type: ethernet
         alias: to_FTD
@@ -174,19 +183,29 @@ topology:
         link: link-dns
         ipv4: 192.168.108.1/24
 
-  CiscoFTD:
+  FTD:
     interfaces:
+      eth0:
+        type: ethernet
+        alias: mgmt
+        link: ftd_mgmt
+        ipv4: 192.168.110.2/24
+      Management0/0:
+        type: ethernet
+        alias: diagnostic
+        link: ftd_mgmt
+        ipv4: 192.168.111.2/24
       GigabitEthernet0/0:
         type: ethernet
         alias: to_IOU1
         link: link-ftd1
         ipv4: 192.168.104.2/24
-      GigabitEthernet0/1:
+      GigabitEthernet0/2:
         type: ethernet
         alias: to_IOSv15
         link: link-ftd2
         ipv4: 192.168.107.2/24
-      GigabitEthernet0/2:
+      GigabitEthernet0/4:
         type: ethernet
         alias: to_DockerGuest2
         link: link-docker2
@@ -196,5 +215,3 @@ topology:
         alias: to_CSR
         link: link-ftd3
         ipv4: 192.168.106.2/24
-
-

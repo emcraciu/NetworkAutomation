@@ -1,4 +1,5 @@
 import telnetlib
+from time import sleep
 from typing import Optional
 
 from pyats.datastructures import AttrDict
@@ -64,3 +65,42 @@ class TelnetConnector:
 
     def is_connected(self):
         return not self._conn.eof
+
+
+    def _initial_conf_ftd(self):
+        # Initial Firepower Device Setup Wizard
+        hostname = self.device.custom.hostname
+        dns = self.device.custom.dns
+
+        self.execute('', prompt=['firepower login:'])
+        self.execute('admin', prompt=['Password:'])
+        self.execute('Admin123', prompt=['Enter new password:'])
+        self.execute(f'{self.device.connections.ssh.credentials.login.password}', prompt=['Confirm new password:'])
+        self.execute(f'{self.device.connections.ssh.credentials.login.password}', prompt=['AGREE to the EULA:'])
+        self.execute('', prompt=['--MORE--'])
+        for i in range(10):
+            self._conn.write(f' '.encode())
+            sleep(0.3)
+        self._conn.expect(['AGREE to the EULA:'.encode()])
+        self.execute('', prompt=['You must configure at least one of IPv4 or IPv6.'])
+        self.execute('', prompt=['Do you want to configure IPv4? (y/n) [y]:'])
+        self.execute('y', prompt=['Do you want to configure IPv6? (y/n) [y]:'])
+        self.execute('n', prompt=['Configure IPv4 via DHCP or manually? (dhcp/manual) [manual]:'])
+        self.execute('manual', prompt=['Enter an IPv4 address for the '
+                                       'management interface [192.168.45.45]:'])
+        self.execute(self.device.interfaces['mgmt'].ipv4.ip.compressed, prompt=['Enter an IPv4 netmask '
+                                              'for the management interface [255.255.255.0]'])
+        self.execute(self.device.interfaces['mgmt'].ipv4.netmask.compressed,
+                     prompt=['Enter the IPv4 default gateway for the '
+                             'management interface [192.168.45.1]:'])
+        self.execute('192.168.103.1', prompt=['Enter a fully qualified hostname '
+                                              'for this system [firepower]:'])
+        self.execute(f'{hostname}', prompt=['Enter a comma-separated list of '
+                                            'DNS severs or \'none\' []'])
+        self.execute(f'{dns}', prompt=['Enter a comma-separated list of '
+                                       'search domains or \'none\' []'])
+        self.execute('none', prompt=['Manage the device locally? (yes/no) [yes]:'])
+        self.execute('yes', prompt=['>'])
+
+        # Exit CLI
+        self.execute('exit', prompt=['>'])
