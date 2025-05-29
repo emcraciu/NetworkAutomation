@@ -89,33 +89,33 @@ class InitialConfigTests(aetest.Testcase):
         with steps.start("Configuring Ubuntu Server"):
             configure_ubuntu_server(testbed.devices['UbuntuServer'])
 
-    async def IOU1_initial_conf(self, steps: Steps, device: Device):
+    async def IOU1_initial_conf(self, steps: Steps, telnet_connector: TelnetConnector):
         """
         Configures the IOU1
         """
         with steps.start("Performing IOU Initial Configuration"):
-            device.do_initial_config()
+            telnet_connector.do_initial_config()
 
-    async def CSR_initial_conf(self, steps: Steps, device: Device):
+    async def CSR_initial_conf(self, steps: Steps, telnet_connector: TelnetConnector):
         """
         Configures the CSR
         """
         with steps.start("Performing CSR Initial Configuration"):
-            device.do_initial_config()
+            telnet_connector.do_initial_config()
 
-    async def V15_initial_conf(self, steps: Steps, device: Device):
+    async def V15_initial_conf(self, steps: Steps, telnet_connector: TelnetConnector):
         """
         Configures the V15
         """
         with steps.start("Performing V15 Initial Configuration"):
-            device.do_initial_config()
+            telnet_connector.do_initial_config()
 
-    async def FTD_initial_conf(self, steps: Steps, device: Device):
+    async def FTD_initial_conf(self, steps: Steps, telnet_connector: TelnetConnector):
         """
         Configures the FTD
         """
         with steps.start("Performing FTD Initial Configuration"):
-            device.do_initial_config()
+            telnet_connector.do_initial_config()
 
     async def asyncio_main(self, steps: Steps, telnet_objects: dict[str, TelnetConnector]):
         """
@@ -186,21 +186,21 @@ class SSHConnectorTests(aetest.Testcase):
         """
         ssh_clients['IOU1'].config()
 
-    def thread_config_CSR(self, steps: Steps, device: Device):
+    def thread_config_CSR(self, steps: Steps, ssh_connector: SSHConnector):
         """
         Performs the main CSR configuration including enabling interfaces, adding ip addresses,
         adding static routes, enabling routing protocols and creating dhcp pools
         """
         with steps.start("Configuring CSR in parallel with V15"):
-            device.config()
+            ssh_connector.config()
 
-    def thread_config_V15(self, steps: Steps, device: Device):
+    def thread_config_V15(self, steps: Steps, ssh_connector: SSHConnector):
         """
         Performs the main V15 configuration including enabling interfaces, adding ip addresses,
         adding static routes, enabling routing protocols
         """
         with steps.start("Configuring V15 in parallel with CSR"):
-            device.config()
+            ssh_connector.config()
 
     @aetest.test
     def config_CSR_and_V15_parallel(self, steps: Steps, ssh_clients: dict[str, SSHConnector]):
