@@ -1,0 +1,330 @@
+testbed:
+  name: "Congiguratie.yaml"
+
+devices:
+  IOU1:
+    type: router
+    platform: iou
+    os: ios
+    custom:
+      hostname: IOU1
+
+      rip:
+        networks:
+          - 192.168.11.0/24
+          - 192.168.101.0/24
+          - 192.168.102.0/24
+          - 192.168.103.0/24
+          - 192.168.104.0/24
+
+      dhcp_pools:
+        guests:
+          network: 192.168.101.0/24
+          default_router: 192.168.101.1
+          dns_server: 192.168.10.10
+          domain_name: savnet.hu
+          excluded_address_ranges:
+            - {start: 192.168.101.1, end: 192.168.101.99}
+            - {start: 192.168.101.201, end: 192.168.101.254}
+
+      routes:
+        to_server:
+          to_ip: 192.168.10.0/24
+          via: 192.168.11.254
+
+    credentials:
+      default:
+        enable_password: pass # se copiaza in celelalte conexiuni
+
+    connections:
+      ssh:
+        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.11.1
+        port: 22
+        credentials:
+          login:
+            username: user
+            password: pass
+      telnet:
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5033
+
+  CSR:
+    type: router
+    os: iosxe
+    platform: csr
+    custom:
+      hostname: CSR
+
+      dhcp_pools:
+        guests:
+          network: 50.50.50.0/24
+          default_router: 50.50.50.1
+          dns_server: 20.20.20.254
+          domain_name: savnet.hu
+
+      rip:
+        networks:
+          - 192.168.101.0/24
+          - 50.50.50.0/24
+          - 40.40.40.0/24
+
+    connections:
+      rest:
+        class: lib.rest_connector.RESTConnector
+        protocol: https
+        port: 443
+        ip: 192.168.101.2
+        credentials:
+          login:
+            username: user
+            password: pass
+      telnet:
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5038
+      ssh:
+        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.101.2
+        port: 22
+        credentials:
+          login:
+            username: user
+            password: pass
+
+  V15:
+    type: router
+    platform: iosv
+    os: ios
+    custom:
+      hostname: V15
+
+      rip:
+        networks:
+          - 192.168.102.0/24
+          - 10.10.10.0/24
+          - 20.20.20.0/24
+
+    connections:
+      ssh:
+        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.102.2
+        port: 22
+        credentials:
+          login:
+            username: user
+            password: pass
+      telnet:
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5037
+
+  FTD:
+    type: ftd
+    os: ftd
+    custom:
+      hostname: FTD
+      dns: 20.20.20.254
+      domain: none
+      management_gateway: 192.168.103.1
+    credentials:
+      login:
+        username: admin
+        password: pass
+      default:
+        username: admin
+        password: Admin123
+    connections:
+#      ssh:
+#        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+#        protocol: ssh
+#        ip: 10.10.10.2
+#        port: 22
+#        credentials:
+#          login:
+#            username: user
+#            password: pass
+      telnet:
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5039
+
+  DNS1:
+    type: dns-server
+    os: other
+    custom:
+      hostname: DNS1
+    connections:
+#      ssh:
+#        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+#        protocol: ssh
+#        ip: 20.20.20.254
+#        port: 22
+#        credentials:
+#          login:
+#            username: user
+#            password: pass
+      telnet:
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5034
+
+  UbuntuServer:
+    type: server_pc
+    os: ubuntu
+
+    custom:
+      hostname: UbuntuServer
+      routes:
+        to_guest_network:
+          to_ip: 192.168.101.0/24
+          via: 192.168.11.1
+        to_csr_network:
+          to_ip: 192.168.102.0/24
+          via: 192.168.11.1
+
+    credentials:
+      login:
+        username: osboxes
+        password: osboxes.org
+    connections:
+      ssh:
+        class: Bibart.Incercare_pyATS.ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.11.1
+        port: 5058
+        credentials:
+          login:
+            username: osboxes
+            password: osboxes.org
+
+  UbuntuGuest1:
+    type: guest_pc
+    os: ubuntu
+    connections:
+      telnet:
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5058
+
+  UbuntuGuest2:
+    type: guest_pc
+    os: ubuntu
+    connections:
+      telnet:
+        class: Bibart.Incercare_pyATS.telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5042
+
+topology:
+  IOU1:
+    interfaces:
+      Ethernet0/0:
+        alias: initial
+        type: ethernet # nu e valoare fixa, e folosita sa grupezi interfete
+        link: "Server-IOU"
+        ipv4: 192.168.11.1/24
+      Ethernet0/1:
+        type: ethernet
+        link: "IOU-CSR"
+        ipv4: 192.168.101.1/24
+      Ethernet0/2:
+        type: ethernet
+        link: "IOU-V15"
+        ipv4: 192.168.102.1/24
+      Ethernet0/3:
+        type: ethernet
+        link: "IOU-FTD"
+        ipv4: 192.168.103.1/24
+      Ethernet1/0:
+        type: ethernet
+        link: ""
+        ipv4: 192.168.104.1/24
+
+  V15:
+    interfaces:
+      GigabitEthernet0/0:
+        type: gigabit
+        link: "IOU-V15"
+        ipv4: 192.168.102.2/24
+      GigabitEthernet0/1:
+        type: gigabit
+        link: "V15-FTD"
+        ipv4: 10.10.10.1/24
+      GigabitEthernet0/2:
+        alias: initial
+        type: gigabit
+        link: "V15-DNS-1"
+        ipv4: 20.20.20.1/24
+
+  FTD:
+    interfaces:
+      Gigabit0/0:
+        alias: management
+        type: gigabit
+        link: "IOU-FTD"
+        ipv4: 192.168.103.2/24
+      Gigabit0/1:
+        type: gigabit
+        link: "V15-FTD"
+#        ipv4: 10.10.10.2/24
+      Gigabit0/2:
+        type: gigabit
+        link: "FTD-GUEST2"
+#        ipv4: 30.30.30.1/24
+      Gigabit0/3:
+        type: gigabit
+        link: "FTD-CSR"
+#        ipv4: 40.40.40.2/24
+
+  CSR:
+    interfaces:
+      GigabitEthernet1:
+        type: gigabit
+        alias: initial
+        link: "IOU-CSR"
+        ipv4: 192.168.101.2/24
+      GigabitEthernet2:
+        type: gigabit
+        link: "CSR-GUEST1"
+        ipv4: 50.50.50.1/24
+      GigabitEthernet3:
+        type: gigabit
+        link: "FTD-CSR"
+        ipv4: 40.40.40.1/24
+
+  UbuntuServer:
+    interfaces:
+      eth1:
+        type: ethernet
+        link: "Server-IOU"
+        ipv4: 192.168.11.254/24
+
+  DNS1:
+    interfaces:
+      eth0:
+        type: ethernet
+        link: "V15-DNS-1"
+
+  UbuntuGuest1:
+    interfaces:
+      eth0:
+        type: ethernet
+        link: "CSR-GUEST1"
+
+  UbuntuGuest2:
+    interfaces:
+      eth0:
+        type: ethernet
+        link: "FTD-GUEST2"
