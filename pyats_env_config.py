@@ -9,7 +9,6 @@ from threading import Thread
 from pyats import aetest
 from pyats.topology import loader
 from pyats.aetest.steps import Steps
-from pyats.topology import Device
 
 from ubuntu_server_config import configure as configure_ubuntu_server
 from ubuntu_server_ping_all import ping_all

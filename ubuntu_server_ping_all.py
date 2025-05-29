@@ -15,7 +15,8 @@ _topology_addresses = [
 ]
 output = "" # pylint: disable=invalid-name
 
-def execute(command) -> str:
+#pylint: disable=unused-argument
+def execute(command, prompt) -> str:
     """
     Executes the command and returns the output
     Returns
