@@ -11,7 +11,7 @@ from paramiko import SSHClient
 from paramiko.client import AutoAddPolicy
 from pyats.topology import Device
 
-from ping_helper import test_pings as ping_helper_test_pings
+from Bibart.ping_helper import test_pings as ping_helper_test_pings
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
