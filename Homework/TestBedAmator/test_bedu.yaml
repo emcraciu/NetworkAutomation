@@ -1,0 +1,275 @@
+testbed:
+  name: "Python"
+devices:
+  IOU1:
+    os: ios
+    platform: iou
+    type: router
+    custom:
+      hostname: em-r1
+    credentials:
+      enable:
+        password: Cisco!2345
+    connections:
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5123
+      ssh:
+        class: ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.11.1
+        port: 22
+        credentials:
+          login:
+            username: admin
+            password: cisco
+      napalm:
+        class: napalm
+        protocol: napalm
+        ip: 192.168.11.1
+        port: 22
+        username: admin
+        password: Cisco!23
+
+  CSR:
+    os: iosxe
+    type: router
+    custom:
+      hostname: em-r2
+      dhcp:
+        - network: 192.168.105.0
+          mask: 255.255.255.0
+          default_router: 192.168.105.1
+          dns_server: 8.8.8.8
+          excluded: [ 192.168.105.0, 192.168.105.10 ]
+        - network: 192.168.108.0
+          mask: 255.255.255.0
+          default_router: 192.168.108.1
+          dns_server: 8.8.8.8
+          excluded: [ 192.168.108.0, 192.168.108.10 ]
+        - network: 192.168.109.0
+          mask: 255.255.255.0
+          default_router: 192.168.109.1
+          dns_server: 8.8.8.8
+          excluded: [ 192.168.109.0, 192.168.109.10 ]
+
+    credentials:
+      enable:
+        password: Cisco!2345
+    connections:
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5126
+      ssh:
+        class: ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.102.2
+        port: 22
+        credentials:
+          login:
+            username: admin
+            password: cisco
+
+
+  CiscoIOSv15:
+    os: iosv
+    type: router
+    custom:
+      hostname: IOSv15
+    credentials:
+      enable:
+        password: Cisco!2345
+    connections:
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5128
+      ssh:
+        protocol: ssh
+        ip: 192.168.103.2
+        port: 22
+        credentials:
+          login:
+            username: admin
+            password: Cisco!23
+      napalm:
+        protocol: napalm
+        class: napalm
+        ip: 192.168.102.2
+        credentials:
+          login:
+            username: admin
+            password: Cisco!23
+
+  FTD:
+    os: ftd
+    type: firewall
+    custom:
+      hostname: FTD
+      dns: 192.168.106.2
+    connections:
+      telnet:
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5136
+        credentials:
+          login:
+            username: admin
+            password: Admin123
+      ssh:
+        class: lib.ssh_connector.SSHConnector
+        protocol: ssh
+        ip: 192.168.103.2
+        port: 22
+        credentials:
+          login:
+            username: admin
+            password: Cisco@135
+      rest:
+        class: lib.swagger_connector.SwaggerConnector
+        protocol: https
+        ip: 192.168.104.2
+        port: 443
+        credentials:
+          login:
+            username: admin
+            password: Cisco!23
+
+  DNS-1:
+    os: linux
+    type: server
+    custom:
+      hostname: DNS-1
+    connections:
+      ssh:
+        protocol: ssh
+        port: 22
+        ipv4: 192.168.100.1 # to be changed
+
+  UbuntuServer:
+    os: linux
+    type: server
+    custom:
+      hostname: UbuntuServer
+    connections:
+      vnc:
+        protocol: vnc
+        ip: 192.168.11.21
+        port: 5911
+
+  UbuntuDockerGuest-1:
+    os: linux
+    type: server
+    custom:
+      hostname: UbuntuDockerGuest-1
+    connections:
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5068
+
+  UbuntuDockerGuest-2:
+    os: linux
+    type: server
+    custom:
+      hostname: UbuntuDockerGuest-2
+    connections:
+      telnet:
+        class: telnet_connector.TelnetConnector
+        protocol: telnet
+        ip: 192.168.0.100
+        port: 5101
+
+topology:
+  IOU1:
+    interfaces:
+      Ethernet0/0:
+        type: ethernet
+        alias: initial
+        link: link-ubuntu
+        ipv4: 192.168.11.1/24
+      Ethernet0/1:
+        type: ethernet
+        alias: to_FTD
+        link: link-ftd1
+        ipv4: 192.168.104.1/24
+      Ethernet0/2:
+        type: ethernet
+        alias: to_CSR
+        link: link-csr
+        ipv4: 192.168.102.1/24
+      Ethernet0/3:
+        type: ethernet
+        alias: to_IOSv15
+        link: link-ios15
+        ipv4: 192.168.103.1/24
+
+
+  CSR:
+    interfaces:
+      GigabitEthernet1:
+        type: ethernet
+        alias: to_IOU1
+        link: link-csr
+        ipv4: 192.168.102.2/24
+      GigabitEthernet2:
+        type: ethernet
+        alias: to_DockerGuest1
+        link: link-docker1
+        ipv4: 192.168.105.1/24
+      GigabitEthernet3:
+        type: ethernet
+        alias: to_FTD
+        link: link-ftd3
+        ipv4: 192.168.106.1/24
+
+  CiscoIOSv15:
+    interfaces:
+      GigabitEthernet0/0:
+        type: ethernet
+        alias: initial
+        link: link-ios15
+        ipv4: 192.168.103.2/24
+      GigabitEthernet0/1:
+        type: ethernet
+        alias: to_FTD
+        link: link-ftd2
+        ipv4: 192.168.107.1/24
+      GigabitEthernet0/2:
+        type: ethernet
+        alias: to_DNS
+        link: link-dns
+        ipv4: 192.168.108.1/24
+
+  FTD:
+    interfaces:
+      eth0:
+        type: ethernet
+        alias: mgmt
+        link: ftd_mgmt
+        ipv4: 192.168.104.2/24
+
+      GigabitEthernet0/0:
+        type: ethernet
+        alias: outside
+        link: link-ftd2
+        ipv4: 192.168.107.2/24
+
+      GigabitEthernet0/1:
+        type: ethernet
+        alias: inside
+        link: link-ftd3
+        ipv4: 192.168.106.2/24
+
+      GigabitEthernet0/2:
+        type: ethernet
+        alias: right
+        link: link-docker2
+        ipv4: 192.168.109.1/24
+
