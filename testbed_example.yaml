@@ -37,30 +37,28 @@ devices:
     type: router
     custom:
       hostname: em-r2
+    credentials:
+      default:
+        username: user
+        password: pass
+      enable:
+        password: Cisco!12
     connections:
-      rest:
-        class: lib.rest_connector.RESTConnector
-        protocol: https
-        port: 443
-        ip: 192.168.102.2
-        credentials:
-          login:
-            username: admin
-            password: Cisco!23
       telnet:
         class: lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5053 # replaces with yours
+        port: # yours
       ssh:
         class: lib.ssh_connector.SSHConnector
         protocol: ssh
         ip: 192.168.102.2
         port: 22
-        credentials:
-          login:
-            username: admin
-            password: Cisco!23
+      rest:
+        class: lib.rest_connector.RESTConnector
+        protocol: rest
+        ip: 192.168.100.2
+        port: 443
 
   IOSv:
     os: ios

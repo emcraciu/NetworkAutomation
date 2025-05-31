@@ -53,10 +53,14 @@ devices:
             username: admin
             password: Cisco!23
       rest:
-#        class: ssh_connector.SSHConnector # your rest class (web)
+        class: lib.rest_connector.RESTConnector
         protocol: https
         ip: 192.168.102.2
         port: 443
+        credentials:
+          login:
+            username: admin
+            password: Cisco!23
 
   IOSv:
     os: ios
