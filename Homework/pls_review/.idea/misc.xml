@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="Black">
-    <option name="sdkName" value="Python 3.12 (Proiect_Network_Automation)" />
-  </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.12.7 (sftp://osboxes@92.83.42.103:1008/home/osboxes/.virtualenvs/Proiect-in-Echipa/bin/python)" project-jdk-type="Python SDK" />
-</project>
