@@ -1,0 +1,1 @@
+from .test_mock import TestDeviceConfig
