@@ -217,7 +217,7 @@ devices:
     credentials:
       login:
         username: admin
-        password: pass
+        password: Cisco@123
       default:
         username: admin
         password: Admin123
@@ -235,7 +235,7 @@ devices:
         class: connectors_lib.telnet_connector.TelnetConnector
         protocol: telnet
         ip: 192.168.0.100
-        port: 5133
+        port: 5005
       rest:
         class: connectors_lib.swagger_connector.SwaggerConnector
         protocol: https

@@ -213,12 +213,13 @@ class SSHConnectorTests(aetest.Testcase):
         csr_thread.join()
         v15_thread.join()
 
-    @aetest.test
-    def configure_FTD_swagger(self, steps: Steps):
-        """
-        Configures FTD via FDM and swagger client
-        """
-        configure_fdm(steps)
+    # Need to navigate to FDM via browser first =/
+    # @aetest.test
+    # def configure_FTD_swagger(self, steps: Steps):
+    #     """
+    #     Configures FTD via FDM and swagger client
+    #     """
+    #     configure_fdm(steps)
 
 class TestPings(aetest.Testcase):
     """

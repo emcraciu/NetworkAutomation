@@ -185,13 +185,13 @@ class TelnetConnector:
             self.write('yes')
 
             # Wait for setup to finish
-            for _ in range(5):
+            for _ in range(15):
                 time.sleep(1)
                 out = self.read()
                 if '>' in out:
                     break
             else:
-                logger.error('FTD Config failed after entering all initial config details and waiting to load.')
+                logger.error('FTD Config timed out after entering all initial config details and waiting to load.')
                 return
 
         # Already configured -> need to wipe current config
